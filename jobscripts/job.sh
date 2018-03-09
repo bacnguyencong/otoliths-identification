@@ -11,4 +11,4 @@ cd ..
 # The message variable is not used for now (will be used to update spreadsheet later)
 # Variable order: message im_size architecture epochs
 
-python main.py -img_size 512  resnet18 -epochs 50 -lr_patience 5 -early_stop 10 -lr 0.0001 --pretrained
+python main.py -img_size 512  --arch resnet18 -epochs 50 -lr_patience 5 -early_stop 10 -lr 0.0001 --pretrained

@@ -33,7 +33,7 @@ def predict(data_loader, model, args, encoder, log=None):
          # compute output
         output = model(input_var)
         _, pred = torch.max(output.data, 1)
-        pred = pred.numpy().tolist()
+        pred = pred.cpu().numpy().tolist()
         preds.extend(encoder.inverse_transform(pred))
         images.extend(sample['name'])
 
