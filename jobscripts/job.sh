@@ -2,7 +2,7 @@
 
 # activate python environment
 export CUDA_VISIBLE_DEVICES=1
-source activate pytorch-gpu
+source activate pytorch_gpu
 
 # Move to src directory
 cd ..
