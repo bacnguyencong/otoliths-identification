@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+import pandas as pd
 from util.utils import AverageMeter
 from  config import *
 
@@ -12,17 +13,17 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-def predict(model, data_loader, args, log=None):
+def predict(data_loader, model, args, encoder, log=None):
     """Make prediction
     Args:
-        model: the trained model
         data_loader: the loader for the data set
+        model: the trained model
         args: the input arguments
         log: the logger to write error messages
     """
-
     # switch to evaluate mode
     model.eval()
+    images, preds =  [], []
     
     for batch_idx, sample in enumerate(data_loader):
 
@@ -31,15 +32,21 @@ def predict(model, data_loader, args, log=None):
         
          # compute output
         output = model(input_var)
-        names = sample['name']
         _, pred = torch.max(output.data, 1)
-        pred = 
-        
-        output.data.cpu().numpy()
+        pred = pred.numpy().tolist()
+        preds.extend(encoder.inverse_transform(pred))
+        images.extend(sample['name'])
+    
+    df = pd.DataFrame()
+    df['image'] = images
+    df['label'] = preds
+    
+    df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
+    log.write('Finished predicting all images ...\n')
 
 def accuracy(output, target):
     """ Compute the accuracy """
-    _, pred = torch.max(output, 1)    
+    _, pred = torch.max(output, 1)   
     return (pred == target).double().sum()/target.size(0)
 
 
@@ -73,7 +80,7 @@ def train(train_loader, valid_loader, model, criterion, optimizer, args, log=Non
         
         # validate the valid data
         loss, acc = evaluate(model, valid_loader, criterion)
-        log.write("valid_loss={:.4f}, valid_acc={:.4f}\n".format(loss, acc))
+        log.write("\nValid_loss={:.4f}, valid_acc={:.4f}\n".format(loss, acc))
 
         # remember best accuracy and save checkpoint
         if acc > best_acc:            
@@ -100,9 +107,9 @@ def train(train_loader, valid_loader, model, criterion, optimizer, args, log=Non
 
     # load the best model
     checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
-    model.load_state_dict(checkpoint['state_dict'])
+    model.load_state_dict(checkpoint['state_dict'])   
 
-    return best_acc, best_loss
+    return model
 
 
 def run_epoch(train_loader, model, criterion, optimizer, epoch, num_epochs, log=None):
@@ -133,7 +140,7 @@ def run_epoch(train_loader, model, criterion, optimizer, epoch, num_epochs, log=
         
          # compute output
         output = model(input_var)
-        loss = criterion(output, target_var)        
+        loss = criterion(output, target_var)
 
         # compute gradient and do SGD step        
         loss.backward()
@@ -146,10 +153,10 @@ def run_epoch(train_loader, model, criterion, optimizer, epoch, num_epochs, log=
         
         # print all messages
         if (batch_idx + 1) % print_iter == 0:
-            log.write('Epoch: [{}][{}/{}]\t'
+            log.write('Epoch: [{:>2}][{:>5.2f} %]\t'
                   'Loss {:.4f}\t'
                   'Acc {:.4f}\n'.format(
-                   epoch, batch_idx, len(train_loader),
+                   epoch, batch_idx*100/len(train_loader),
                    losses.avg, acc.avg))
 
 

@@ -59,12 +59,23 @@ def main(args):
                               shuffle=False,
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
+    #-------------------------------------------------------------------------#
     
     #-----------------------------Training model -----------------------------#
     model = mu.train(train_loader, valid_loader, model, criterion, optimizer, args,log)
     
     #-------------------------------- Testing --------------------------------#
-    encoder = dset_train.encoder # encoder
+    
+    dset_test = pu.DataLoader(None, TEST_DIR, input_trans, labels)
+    test_loader = DataLoader(dset_test,
+                              batch_size=args.batch_size,
+                              shuffle=False,
+                              num_workers=args.workers,
+                              pin_memory=GPU_AVAIL)    
+    mu.predict(test_loader, model, args, encoder, log)
+    #-------------------------------------------------------------------------#
+    
+    
     return 0
 
 
@@ -81,7 +92,7 @@ if __name__ == '__main__':
                         choices=model_names, help='model architecture: ' +
                         ' | '.join(model_names) +
                         ' (default: resnet18)')
-    prs.add_argument('-epochs', default=100, type=int, help='Number of total epochs to run')
+    prs.add_argument('-epochs', default=10, type=int, help='Number of total epochs to run')
     prs.add_argument('-lr_patience', default=3, type=int, help='Number of patience to update lr')
     prs.add_argument('-early_stop', default=5, type=int, help='Early stopping')
     prs.add_argument('-j', '--workers', default=2, type=int, metavar='N', help='Number of data loading workers')
@@ -90,6 +101,7 @@ if __name__ == '__main__':
     prs.add_argument('--weight_decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
     prs.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', action='store_true', help='use pre-trained model')
+    
     
     args = prs.parse_args()
     

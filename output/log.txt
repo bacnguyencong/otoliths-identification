@@ -1,1 +1,10 @@
 => creating model 'resnet18'
+Epoch: [ 0][ 9.84 %]	Loss 1.4932	Acc 0.5000
+Epoch: [ 0][20.49 %]	Loss 2.6800	Acc 0.4615
+Epoch: [ 0][31.15 %]	Loss 3.5361	Acc 0.4872
+Epoch: [ 0][41.80 %]	Loss 3.9100	Acc 0.5096
+Epoch: [ 0][52.46 %]	Loss 3.5694	Acc 0.4923
+Epoch: [ 0][63.11 %]	Loss 3.1766	Acc 0.4936
+Epoch: [ 0][73.77 %]	Loss 2.9252	Acc 0.5000
+Epoch: [ 0][84.43 %]	Loss 2.6575	Acc 0.5096
+Epoch: [ 0][95.08 %]	Loss 2.4948	Acc 0.5085

@@ -1,4 +1,6 @@
 import os
+from os import listdir
+from os.path import isfile, join
 import cv2
 import pandas as pd
 import numpy as np
@@ -18,12 +20,18 @@ class DataLoader(Dataset):
             root_dir (string): Directory with all the images.
             transform (callable, optional): Optional transform to be applied on a sample.
         """
-        meta_info = pd.read_csv(csv_file)
-        self.images = meta_info['image']
-        self.classes = meta_info['label'].unique() if classes is None else classes
-        self.num_classes = len(self.classes)
-        self.encoder = LabelEncoder().fit(self.classes)
-        self.labels = self.encoder.transform(meta_info['label'])
+        
+        if csv_file:
+            meta_info = pd.read_csv(csv_file)
+            self.images = meta_info['image']
+            self.classes = meta_info['label'].unique() if classes is None else classes
+            self.num_classes = len(self.classes)
+            self.encoder = LabelEncoder().fit(self.classes)
+            self.labels = self.encoder.transform(meta_info['label'])
+        else:
+            self.images = [f for f in listdir(root_dir) if isfile(join(root_dir, f))]
+            self.labels = [-1] * len(self.images)
+                
         self.root_dir = root_dir
         self.transform = transform
         
