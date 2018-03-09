@@ -1,7 +1,8 @@
 import os
 from os import listdir
 from os.path import isfile, join
-import cv2
+#import cv2
+from PIL import Image
 import pandas as pd
 import numpy as np
 import util.utils as ut
@@ -12,7 +13,7 @@ from sklearn.preprocessing import MultiLabelBinarizer,LabelEncoder
 
 class DataLoader(Dataset):
     """Fish dataset"""
-    
+
     def __init__(self, csv_file, root_dir, transform=None, classes=None):
         """
         Args:
@@ -20,7 +21,7 @@ class DataLoader(Dataset):
             root_dir (string): Directory with all the images.
             transform (callable, optional): Optional transform to be applied on a sample.
         """
-        
+
         if csv_file:
             meta_info = pd.read_csv(csv_file)
             self.images = meta_info['image']
@@ -31,19 +32,19 @@ class DataLoader(Dataset):
         else:
             self.images = [f for f in listdir(root_dir) if isfile(join(root_dir, f))]
             self.labels = [-1] * len(self.images)
-                
+
         self.root_dir = root_dir
         self.transform = transform
-        
+
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir,
                                 self.images[idx])
-        image = cv2.imread(img_name)
+        #image = cv2.imread(img_name)
+        image = Image.open(img_name)
         if self.transform:
             image = self.transform(image)
 
         label = self.labels[idx]
-        image = ut.image_to_tensor(image/255)
 
         return {'image': image, 'label': label, 'name': self.images[idx]}
 

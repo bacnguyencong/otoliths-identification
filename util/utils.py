@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 import cv2
 
 def imshow(image, title=None):
-    """ show an image """    
-    
+    """ show an image """
+
     plt.imshow(image)
     plt.show()
     if title is not None:
@@ -16,16 +16,12 @@ def resize_cv2(image, heigh=1280, width=1918):
     """ Resize of an cv2 image """
     return cv2.resize(image, (width, heigh), cv2.INTER_LINEAR)
 
-def image_to_tensor(image, mean=0, std=1.):
-    """Transform image (input is numpy array, read in by cv2) 
+def image_to_tensor(image):
+    """Transform image (input is numpy array, read in by cv2)
     Args:
         image: a multiarray image from cv2 format
-        mean:  the mean to normalize image
-        std: the standard deviation to normalize image
     """
-    
     image = image.astype(np.float32)
-    image = (image-mean)/std
     image = image.transpose((2,0,1))
     tensor = torch.from_numpy(image)
 

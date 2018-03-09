@@ -1,10 +1,120 @@
-=> creating model 'resnet18'
-Epoch: [ 0][ 9.84 %]	Loss 1.4932	Acc 0.5000
-Epoch: [ 0][20.49 %]	Loss 2.6800	Acc 0.4615
-Epoch: [ 0][31.15 %]	Loss 3.5361	Acc 0.4872
-Epoch: [ 0][41.80 %]	Loss 3.9100	Acc 0.5096
-Epoch: [ 0][52.46 %]	Loss 3.5694	Acc 0.4923
-Epoch: [ 0][63.11 %]	Loss 3.1766	Acc 0.4936
-Epoch: [ 0][73.77 %]	Loss 2.9252	Acc 0.5000
-Epoch: [ 0][84.43 %]	Loss 2.6575	Acc 0.5096
-Epoch: [ 0][95.08 %]	Loss 2.4948	Acc 0.5085
+=> using pre-trained model 'resnet18'
+Epoch [ 1][ 8.00 %]	Loss 0.6996	Acc 0.4667
+Epoch [ 1][20.00 %]	Loss 0.7547	Acc 0.4167
+Epoch [ 1][32.00 %]	Loss 0.7526	Acc 0.4222
+Epoch [ 1][44.00 %]	Loss 0.7575	Acc 0.4333
+Epoch [ 1][56.00 %]	Loss 0.7413	Acc 0.4800
+Epoch [ 1][68.00 %]	Loss 0.7337	Acc 0.4833
+Epoch [ 1][80.00 %]	Loss 0.7245	Acc 0.4905
+Epoch [ 1][92.00 %]	Loss 0.7099	Acc 0.5083
+
+Valid_loss=0.6108, valid_acc=0.6926
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 2][ 8.00 %]	Loss 0.6646	Acc 0.6333
+Epoch [ 2][20.00 %]	Loss 0.6661	Acc 0.6667
+Epoch [ 2][32.00 %]	Loss 0.6465	Acc 0.6889
+Epoch [ 2][44.00 %]	Loss 0.6222	Acc 0.7250
+Epoch [ 2][56.00 %]	Loss 0.6183	Acc 0.7000
+Epoch [ 2][68.00 %]	Loss 0.6131	Acc 0.6944
+Epoch [ 2][80.00 %]	Loss 0.6018	Acc 0.7095
+Epoch [ 2][92.00 %]	Loss 0.6041	Acc 0.7167
+
+Valid_loss=0.4821, valid_acc=0.8115
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 3][ 8.00 %]	Loss 0.5643	Acc 0.6667
+Epoch [ 3][20.00 %]	Loss 0.5467	Acc 0.7333
+Epoch [ 3][32.00 %]	Loss 0.5344	Acc 0.7667
+Epoch [ 3][44.00 %]	Loss 0.5259	Acc 0.7917
+Epoch [ 3][56.00 %]	Loss 0.5145	Acc 0.8067
+Epoch [ 3][68.00 %]	Loss 0.5153	Acc 0.8000
+Epoch [ 3][80.00 %]	Loss 0.5021	Acc 0.8190
+Epoch [ 3][92.00 %]	Loss 0.4920	Acc 0.8292
+
+Valid_loss=0.3977, valid_acc=0.8852
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 4][ 8.00 %]	Loss 0.4795	Acc 0.8000
+Epoch [ 4][20.00 %]	Loss 0.4795	Acc 0.8167
+Epoch [ 4][32.00 %]	Loss 0.4698	Acc 0.8222
+Epoch [ 4][44.00 %]	Loss 0.4910	Acc 0.7833
+Epoch [ 4][56.00 %]	Loss 0.5152	Acc 0.7600
+Epoch [ 4][68.00 %]	Loss 0.5020	Acc 0.7778
+Epoch [ 4][80.00 %]	Loss 0.4891	Acc 0.7952
+Epoch [ 4][92.00 %]	Loss 0.4683	Acc 0.8167
+
+Valid_loss=0.3388, valid_acc=0.9262
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 5][ 8.00 %]	Loss 0.3301	Acc 1.0000
+Epoch [ 5][20.00 %]	Loss 0.3578	Acc 0.9333
+Epoch [ 5][32.00 %]	Loss 0.3759	Acc 0.9222
+Epoch [ 5][44.00 %]	Loss 0.3846	Acc 0.9000
+Epoch [ 5][56.00 %]	Loss 0.3912	Acc 0.8933
+Epoch [ 5][68.00 %]	Loss 0.4031	Acc 0.8833
+Epoch [ 5][80.00 %]	Loss 0.3986	Acc 0.8810
+Epoch [ 5][92.00 %]	Loss 0.3933	Acc 0.8875
+
+Valid_loss=0.3083, valid_acc=0.9385
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 6][ 8.00 %]	Loss 0.4306	Acc 0.8667
+Epoch [ 6][20.00 %]	Loss 0.3763	Acc 0.9167
+Epoch [ 6][32.00 %]	Loss 0.3535	Acc 0.9000
+Epoch [ 6][44.00 %]	Loss 0.3567	Acc 0.8917
+Epoch [ 6][56.00 %]	Loss 0.3566	Acc 0.9000
+Epoch [ 6][68.00 %]	Loss 0.3719	Acc 0.8889
+Epoch [ 6][80.00 %]	Loss 0.3602	Acc 0.9000
+Epoch [ 6][92.00 %]	Loss 0.3642	Acc 0.8958
+
+Valid_loss=0.2705, valid_acc=0.9467
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 7][ 8.00 %]	Loss 0.3432	Acc 0.8667
+Epoch [ 7][20.00 %]	Loss 0.3220	Acc 0.9000
+Epoch [ 7][32.00 %]	Loss 0.3300	Acc 0.8778
+Epoch [ 7][44.00 %]	Loss 0.3356	Acc 0.8833
+Epoch [ 7][56.00 %]	Loss 0.3693	Acc 0.8533
+Epoch [ 7][68.00 %]	Loss 0.3441	Acc 0.8778
+Epoch [ 7][80.00 %]	Loss 0.3435	Acc 0.8810
+Epoch [ 7][92.00 %]	Loss 0.3292	Acc 0.8917
+
+Valid_loss=0.2412, valid_acc=0.9590
+Saving best model architecture...
+----------------------------------------------------------
+Epoch [ 8][ 8.00 %]	Loss 0.3457	Acc 0.8667
+Epoch [ 8][20.00 %]	Loss 0.3365	Acc 0.9167
+Epoch [ 8][32.00 %]	Loss 0.3189	Acc 0.9000
+Epoch [ 8][44.00 %]	Loss 0.3233	Acc 0.9000
+Epoch [ 8][56.00 %]	Loss 0.3201	Acc 0.9000
+Epoch [ 8][68.00 %]	Loss 0.3065	Acc 0.9056
+Epoch [ 8][80.00 %]	Loss 0.3062	Acc 0.9095
+Epoch [ 8][92.00 %]	Loss 0.3170	Acc 0.9000
+
+Valid_loss=0.2219, valid_acc=0.9549
+----------------------------------------------------------
+Epoch [ 9][ 8.00 %]	Loss 0.4158	Acc 0.7000
+Epoch [ 9][20.00 %]	Loss 0.3834	Acc 0.7833
+Epoch [ 9][32.00 %]	Loss 0.3728	Acc 0.8000
+Epoch [ 9][44.00 %]	Loss 0.3444	Acc 0.8167
+Epoch [ 9][56.00 %]	Loss 0.3233	Acc 0.8400
+Epoch [ 9][68.00 %]	Loss 0.3138	Acc 0.8500
+Epoch [ 9][80.00 %]	Loss 0.3081	Acc 0.8571
+Epoch [ 9][92.00 %]	Loss 0.3039	Acc 0.8625
+
+Valid_loss=0.2070, valid_acc=0.9549
+----------------------------------------------------------
+Epoch [10][ 8.00 %]	Loss 0.2464	Acc 0.9333
+Epoch [10][20.00 %]	Loss 0.2517	Acc 0.9333
+Epoch [10][32.00 %]	Loss 0.2616	Acc 0.9111
+Epoch [10][44.00 %]	Loss 0.2517	Acc 0.9167
+Epoch [10][56.00 %]	Loss 0.2610	Acc 0.9067
+Epoch [10][68.00 %]	Loss 0.2644	Acc 0.9111
+Epoch [10][80.00 %]	Loss 0.2687	Acc 0.9048
+Epoch [10][92.00 %]	Loss 0.2619	Acc 0.9083
+
+Valid_loss=0.1908, valid_acc=0.9672
+Saving best model architecture...
+----------------------------------------------------------
+Finished predicting all images ...
