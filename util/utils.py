@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import sys
 import matplotlib.pyplot as plt
+import cv2
 
 def imshow(image, title=None):
     """ show an image """    
@@ -11,6 +12,9 @@ def imshow(image, title=None):
     if title is not None:
         plt.title(title)
 
+def resize_cv2(image, heigh=1280, width=1918):
+    """ Resize of an cv2 image """
+    return cv2.resize(image, (width, heigh), cv2.INTER_LINEAR)
 
 def image_to_tensor(image, mean=0, std=1.):
     """Transform image (input is numpy array, read in by cv2) 
@@ -52,3 +56,27 @@ class Logger(object):
         # this handles the flush command by doing nothing.
         # you might want to specify some extra behavior here.
         pass
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
+def adjust_learning_rate(optimizer, epoch, lr):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = lr * (0.1 ** (epoch // 30))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
