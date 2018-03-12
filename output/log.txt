@@ -1,1 +1,3 @@
-=> creating model 'vgg16_bn'
+=> using pre-trained model 'resnet18'
+Epoch [ 1][ 0.00 %]	Loss 1.8854	Acc 0.1250
+Epoch [ 1][25.00 %]	Loss 1.8718	Acc 0.1875
