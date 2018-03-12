@@ -12,6 +12,12 @@ def imshow(image, title=None):
     if title is not None:
         plt.title(title)
 
+def crop_img(img, width, height):
+    """ Crop a PIL image """
+    area = (0, 0, width, height)
+    img = img.crop(area)
+    return img
+
 def resize_cv2(image, heigh=1280, width=1918):
     """ Resize of an cv2 image """
     return cv2.resize(image, (width, heigh), cv2.INTER_LINEAR)

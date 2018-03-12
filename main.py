@@ -3,9 +3,11 @@ import util.utils as ut
 from torch.utils.data import DataLoader
 import argparse
 import torch
+import PIL
 from torchvision import models, transforms
 from model.CNNs import FineTuneModel
 from model import model_utils as mu
+from torchvision.datasets import ImageFolder
 
 from config import *
 
@@ -16,33 +18,31 @@ def main(args):
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                       std=[0.229, 0.224, 0.225])
-    #transforms.Lambda(lambda x: ut.resize_cv2(x, args.im_h, args.im_w))
-    #transforms.Lambda(lambda x: ut.image_to_tensor(x/255)),
 
     input_trans = transforms.Compose([
-                transforms.Resize(args.img_size),
-                transforms.CenterCrop(224),
+                transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1400)),
+                transforms.Resize((args.img_size, args.img_size)),
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomVerticalFlip(),
-                transforms.RandomRotation(90),
+                transforms.RandomRotation(45,PIL.Image.BILINEAR),
                 transforms.ToTensor(),
                 normalize
         ])
 
     valid_trans = transforms.Compose([
-            transforms.Resize(args.img_size),
-            transforms.CenterCrop(224),
+            transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1400)),
+            transforms.Resize((args.img_size, args.img_size)),
             transforms.ToTensor(),
             normalize
     ])
 
-    dset_train = pu.DataLoader(TRAIN_CSV_FILE, ROOT_DIR, input_trans)
-
+    # data loader for training
+    dset_train = ImageFolder(root=ROOT_DIR, transform=input_trans)
     labels = dset_train.classes  # all lables
-    num_classes = dset_train.num_classes # number of classes
-    encoder = dset_train.encoder # encoder
+    num_classes = len(labels)    # number of classes
+    label_map = dict({dset_train.class_to_idx[name]: name for name in dset_train.classes})
 
-    dset_valid = pu.DataLoader(VALID_CSV_FILE, ROOT_DIR, valid_trans, labels)
+    # data loader for validating
+    dset_valid = ImageFolder(root=ROOT_DIR, transform=valid_trans)
 
     #----------------------------------Configure------------------------------#
     # model arquitechture
@@ -85,7 +85,6 @@ def main(args):
     model = mu.train(train_loader, valid_loader, model, criterion, optimizer, args,log)
     #--------------------------------------------------------------------------#
 
-
     #-------------------------------- Testing ---------------------------------#
     dset_test = pu.DataLoader(None, TEST_DIR, valid_trans, labels)
     test_loader = DataLoader(dset_test,
@@ -93,9 +92,8 @@ def main(args):
                               shuffle=False,
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
-    mu.predict(test_loader, model, args, encoder, log)
+    mu.predict(test_loader, model, args, label_map, log)
     #--------------------------------------------------------------------------#
-
 
     return 0
 
@@ -107,7 +105,7 @@ if __name__ == '__main__':
 
     prs = argparse.ArgumentParser(description='Fish challenge')
     prs.add_argument('-message', default=' ', type=str, help='Message to describe experiment in spreadsheet')
-    prs.add_argument('-img_size', default=256, type=int, help='image height (default: 256)')
+    prs.add_argument('-img_size', default=224, type=int, help='image height (default: 224)')
     prs.add_argument('--arch', '-a', metavar='ARCH', default='resnet18',
                         choices=model_names, help='model architecture: ' +
                         ' | '.join(model_names) +
@@ -122,10 +120,9 @@ if __name__ == '__main__':
     prs.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', action='store_true', help='use pre-trained model')
 
-
     args = prs.parse_args()
-
     main(args)
+
     print('running correctly')
 
 #ps.imshow()

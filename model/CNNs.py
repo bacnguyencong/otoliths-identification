@@ -14,9 +14,9 @@ depth_size2 = 3
 
 
 class FineTuneModel(nn.Module):
-    
+
     def __init__(self, original_model, arch, num_classes):
-        
+
         super(FineTuneModel, self).__init__()
 
         if arch.startswith('resnet'):

@@ -13,12 +13,13 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-def predict(data_loader, model, args, encoder, log=None):
+def predict(data_loader, model, args, label_map, log=None):
     """Make prediction
     Args:
         data_loader: the loader for the data set
         model: the trained model
         args: the input arguments
+        label_map: the mapped labels
         log: the logger to write error messages
     """
     # switch to evaluate mode
@@ -34,7 +35,7 @@ def predict(data_loader, model, args, encoder, log=None):
         output = model(input_var)
         _, pred = torch.max(output.data, 1)
         pred = pred.cpu().numpy().tolist()
-        preds.extend(encoder.inverse_transform(pred))
+        preds.extend([label_map[it] for it in pred])
         images.extend(sample['name'])
 
     df = pd.DataFrame()
@@ -126,10 +127,10 @@ def run_epoch(train_loader, model, criterion, optimizer, epoch, num_epochs, log=
     # number of iterations before print outputs
     print_iter = np.ceil(data_size / (10 * train_loader.batch_size))
 
-    for batch_idx, sample in enumerate(train_loader):
+    for batch_idx, (dinput, target) in enumerate(train_loader):
 
-        dinput = sample['image'].cuda() if GPU_AVAIL else sample['image']
-        target = sample['label'].cuda() if GPU_AVAIL else sample['label']
+        dinput = dinput.cuda() if GPU_AVAIL else dinput
+        target = target.cuda() if GPU_AVAIL else target
 
         input_var = Variable(dinput)
         target_var = Variable(target)
@@ -176,10 +177,10 @@ def evaluate(model, data_loader, criterion):
     losses = AverageMeter()
     acces = AverageMeter()
 
-    for batch_idx, sample in enumerate(data_loader):
+    for batch_idx,  (dinput, target) in enumerate(data_loader):
 
-        dinput = sample['image'].cuda() if GPU_AVAIL else sample['image']
-        target = sample['label'].cuda() if GPU_AVAIL else sample['label']
+        dinput = dinput.cuda() if GPU_AVAIL else dinput
+        target = target.cuda() if GPU_AVAIL else target
 
         input_var = Variable(dinput)
         target_var = Variable(target)

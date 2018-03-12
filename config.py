@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import torch
 
-ROOT_DIR = './data/images'
+#ROOT_DIR = './data/images'
 TEST_DIR = './data/images'
+ROOT_DIR = './data/Reference pictures'
 TRAIN_CSV_FILE = './data/data.csv'
 VALID_CSV_FILE = './data/data.csv'
 OUTPUT_FILE = './output/log.txt'
