@@ -36,13 +36,13 @@ def main(args):
     ])
 
     # data loader for training
-    dset_train = ImageFolder(root=ROOT_DIR, transform=input_trans)
+    dset_train = ImageFolder(root=TRAIN_DIR, transform=input_trans)
     labels = dset_train.classes  # all lables
     num_classes = len(labels)    # number of classes
     label_map = dict({dset_train.class_to_idx[name]: name for name in dset_train.classes})
 
     # data loader for validating
-    dset_valid = ImageFolder(root=ROOT_DIR, transform=valid_trans)
+    dset_valid = ImageFolder(root=VALID_DIR, transform=valid_trans)
 
     #----------------------------------Configure------------------------------#
     # model arquitechture
