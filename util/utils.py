@@ -3,6 +3,7 @@ import torch
 import sys
 import matplotlib.pyplot as plt
 import cv2
+from PIL import Image
 
 def imshow(image, title=None):
     """ show an image """
@@ -12,9 +13,16 @@ def imshow(image, title=None):
     if title is not None:
         plt.title(title)
 
-def crop_img(img, width, height):
+def make_square(img, fill_color=(0, 0, 0)):
+    x, y = img.size
+    size = max(x, y)
+    new_img = Image.new(img.mode, (size, size), fill_color)
+    new_img.paste(img, ((size - x) // 2, (size - y) // 2))
+    return new_img
+
+def crop_img(img, width, height, x=0, y=100):
     """ Crop a PIL image """
-    area = (0, 0, width, height)
+    area = (x, y, width, height)
     img = img.crop(area)
     return img
 
