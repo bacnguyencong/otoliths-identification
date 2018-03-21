@@ -19,7 +19,18 @@ class FineTuneModel(nn.Module):
 
         super(FineTuneModel, self).__init__()
 
-        if arch.startswith('resnet'):
+        if arch.startswith('alexnet'):
+            self.features = original_model.features
+            self.classifier = nn.Sequential(
+                nn.Dropout(),
+                nn.Linear(256 * 6 * 6, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 4096),
+                nn.ReLU(inplace=True),
+                nn.Linear(4096, num_classes),
+            )
+        elif arch.startswith('resnet'):
             # Everything except the last linear layer
             self.features = nn.Sequential(*list(original_model.children())[:-1])
             self.classifier = nn.Sequential(

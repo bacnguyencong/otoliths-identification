@@ -1,3 +1,4 @@
-=> creating model 'resnet18'
-Epoch [ 1][ 9.17 %]	Loss 3.9300	Acc 0.0583
-Epoch [ 1][19.17 %]	Loss 4.0397	Acc 0.0583
+=> creating model 'alexnet'
+Epoch [ 1][ 9.88 %]	Loss 3.9747	Acc 0.0917
+Epoch [ 1][19.93 %]	Loss 3.7799	Acc 0.1167
+Epoch [ 1][29.98 %]	Loss 3.6600	Acc 0.1361

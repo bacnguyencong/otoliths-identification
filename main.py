@@ -56,11 +56,17 @@ def main(args):
         model = models.__dict__[args.arch]()
 
     model = FineTuneModel(model, args.arch, num_classes)
+
     # optimizer
+    """
+    # SGD
     optimizer = torch.optim.SGD(model.parameters(),
                                  args.lr,
                                  momentum=args.momentum,
                                  weight_decay=args.weight_decay)
+    """
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
     # criterion
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -116,8 +122,8 @@ if __name__ == '__main__':
     prs.add_argument('-lr_patience', default=3, type=int, help='Number of patience to update lr')
     prs.add_argument('-early_stop', default=5, type=int, help='Early stopping')
     prs.add_argument('-j', '--workers', default=2, type=int, metavar='N', help='Number of data loading workers')
-    prs.add_argument('-lr', '--lr', default=0.01, type=float, metavar='LR', help='Initial learning rate')
-    prs.add_argument('-b', '--batch_size', default=10, type=int, metavar='N', help='Mini-batch size (default: 16)')
+    prs.add_argument('-lr', '--lr', default=0.001, type=float, metavar='LR', help='Initial learning rate')
+    prs.add_argument('-b', '--batch_size', default=32, type=int, metavar='N', help='Mini-batch size (default: 16)')
     prs.add_argument('--weight_decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
     prs.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', action='store_true', help='use pre-trained model')
