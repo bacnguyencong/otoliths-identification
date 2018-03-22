@@ -1,4 +1,0 @@
-=> creating model 'alexnet'
-Epoch [ 1][ 9.88 %]	Loss 3.9747	Acc 0.0917
-Epoch [ 1][19.93 %]	Loss 3.7799	Acc 0.1167
-Epoch [ 1][29.98 %]	Loss 3.6600	Acc 0.1361
