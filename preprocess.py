@@ -3,9 +3,6 @@
 
 # # Otoliths predictions
 
-# In[1]:
-
-get_ipython().magic('matplotlib inline')
 from util.useful_imports import *
 
 
