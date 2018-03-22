@@ -97,6 +97,8 @@ for dire in os.listdir(REF_SEG_DIR):
         if i >= train or n <= 5:
             copyfile(filepath, p2 + '/' + filename)
 
+#delete the folder
+shutil.rmtree(REF_SEG_DIR)
 
 # ## 2. Create test data
 
