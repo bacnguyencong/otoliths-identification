@@ -18,7 +18,7 @@ if os.path.exists(REF_SEG_DIR):
 os.makedirs(REF_SEG_DIR)
 
 threshold = 0.25
-remove_bg = True
+remove_bg = False
 conv_sigma = 2.0
 opening_size = 30
 
@@ -125,6 +125,7 @@ for dire in os.listdir(SAMPLE_DIR):
                 img_list.append(tif_file)
 
 
+print("Segmenting the test data")
 # Segment all images
 from skimage.io import imread, imsave
 
@@ -134,7 +135,7 @@ if os.path.exists(TEST_DIR):
 os.makedirs(TEST_DIR)
 
 threshold = 0.25
-remove_bg = True
+remove_bg = False
 conv_sigma = 2.0
 opening_size = 30
 

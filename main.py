@@ -20,17 +20,16 @@ def main(args):
                                       std=[0.229, 0.224, 0.225])
 
     input_trans = transforms.Compose([
-               # transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1300)),
-                transforms.Lambda(lambda x: ut.make_square(x)),
-                transforms.Resize((args.img_size, args.img_size)),
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomRotation(45,PIL.Image.BILINEAR),
-                transforms.ToTensor(),
-                normalize
-        ])
+            transforms.ColorJitter(brightness=0.2, contrast=0.2,saturation=0.2),
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(15,resample=PIL.Image.BILINEAR, expand=True),
+            transforms.Lambda(lambda x: ut.make_square(x)),                           
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            normalize
+    ])
 
     valid_trans = transforms.Compose([
-            #transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1300)),
             transforms.Lambda(lambda x: ut.make_square(x)),
             transforms.Resize((args.img_size, args.img_size)),
             transforms.ToTensor(),
