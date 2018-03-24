@@ -24,7 +24,7 @@ def main(args):
             transforms.RandomHorizontalFlip(),
             transforms.RandomRotation(15,resample=PIL.Image.BILINEAR, expand=True),
             transforms.Lambda(lambda x: ut.make_square(x)),                           
-            transforms.Resize((224, 224)),
+            transforms.Resize((args.img_size, args.img_size)),
             transforms.ToTensor(),
             normalize
     ])
