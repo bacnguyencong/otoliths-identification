@@ -20,7 +20,7 @@ def main(args):
                                       std=[0.229, 0.224, 0.225])
 
     input_trans = transforms.Compose([
-                transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1300)),
+               # transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1300)),
                 transforms.Lambda(lambda x: ut.make_square(x)),
                 transforms.Resize((args.img_size, args.img_size)),
                 transforms.RandomHorizontalFlip(),
@@ -30,7 +30,7 @@ def main(args):
         ])
 
     valid_trans = transforms.Compose([
-            transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1300)),
+            #transforms.Lambda(lambda x: ut.crop_img(x, 2000, 1300)),
             transforms.Lambda(lambda x: ut.make_square(x)),
             transforms.Resize((args.img_size, args.img_size)),
             transforms.ToTensor(),
