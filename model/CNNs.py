@@ -67,6 +67,51 @@ class FineTuneModel(nn.Module):
             y = self.classifier(f)
         return y
 
+class FineTuneModel_Hierarchical(nn.Module):
+
+    def __init__(self, original_model, arch, gr_0_size=3, gr_1_size=3):
+
+        super(FineTuneModel, self).__init__()
+
+        if arch.startswith('alexnet'):
+            self.features = original_model.features
+            output_size = 256 * 6 * 6
+            self.level_0 = nn.Linear(output_size, 1)
+            self.level_1_0 = nn.Linear(output_size, gr_0_size)
+            self.level_1_1 = nn.Linear(output_size, gr_1_size)
+        elif arch.startswith('resnet'):
+            # Everything except the last linear layer
+            self.features = nn.Sequential(*list(original_model.children())[:-1])
+            output_size = original_model.fc.in_features
+            self.level_0 = nn.Linear(output_size, 1)
+            self.level_1_0 = nn.Linear(output_size, gr_0_size)
+            self.level_1_1 = nn.Linear(output_size, gr_1_size)
+
+        elif arch.startswith('densenet'):
+            self.features = original_model.features
+            output_size = original_model.classifier.in_features
+            self.level_0 = nn.Linear(output_size, 1)
+            self.level_1_0 = nn.Linear(output_size, gr_0_size)
+            self.level_1_1 = nn.Linear(output_size, gr_1_size)
+
+        elif arch.startswith('vgg16'):
+            self.features = original_model.features
+            output_size = 25088
+            self.level_0 = nn.Linear(output_size, 1)
+            self.level_1_0 = nn.Linear(output_size, gr_0_size)
+            self.level_1_1 = nn.Linear(output_size, gr_1_size)
+        else:
+            raise ("Finetuning not supported on this architecture yet")
+        self.modelName = arch
+
+    def forward(self, x):
+        features = self.features(x)
+        if self.modelName.startswith('densenet'):
+            features = F.relu(f, inplace=True)
+            features = F.avg_pool2d(out, kernel_size=7).view(f.size(0), -1)
+        else:
+            features = features.view(features.size(0), -1)
+        return features
 
 class CNNs(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), n_outputs=17):
