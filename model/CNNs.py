@@ -69,10 +69,11 @@ class FineTuneModel(nn.Module):
 
 class FineTuneModel_Hierarchical(nn.Module):
 
-    def __init__(self, original_model, arch, gr_0_size=3, gr_1_size=3):
+    def __init__(self, original_model, arch, args, gr_0_size=3, gr_1_size=3):
 
-        super(FineTuneModel, self).__init__()
-
+        super(FineTuneModel_Hierarchical, self).__init__()
+        self.args = args
+        
         if arch.startswith('alexnet'):
             self.features = original_model.features
             output_size = 256 * 6 * 6
