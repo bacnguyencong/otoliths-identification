@@ -160,6 +160,23 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+def loss_acc_plot(train, valid, label, output):
+    """ Plot accuracies and losses over training
+    Args:
+        train: training input
+        valid: validation input
+        label:
+    """
+    fig = plt.figure()
+    x = list(range(1, len(valid)+1))
+    plt.plot(x, train, label='Train')
+    plt.plot(x, valid, label='Valid')
+    plt.ylabel(label)
+    plt.xlabel('epoch')
+    plt.xticks(x)
+    plt.legend()
+    #plt.show()
+    fig.savefig(output + label + '.png')
 
 def adjust_learning_rate(optimizer, epoch, lr):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""

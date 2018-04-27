@@ -13,33 +13,33 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-def predict(data_loader, model, args, label_map, log=None):
+def make_prediction(data_loader, model, args, log=None):
     """Make prediction
     Args:
         data_loader: the loader for the data set
         model: the trained model
         args: the input arguments
-        label_map: the mapped labels
         log: the logger to write error messages
     """
     # switch to evaluate mode
     model.eval()
-    images, preds =  [], []
+    images, groups, preds =  [], [], []
 
-    for batch_idx, sample in enumerate(data_loader):
+    for batch_idx, inputs in enumerate(data_loader):
 
-        dinput = sample['image'].cuda() if GPU_AVAIL else sample['image']
-        input_var = Variable(dinput)
+        input_var = Variable(inputs['image'].cuda() if GPU_AVAIL else inputs['image'])
 
-         # compute output
-        output = model(input_var)
-        _, pred = torch.max(output.data, 1)
-        pred = pred.cpu().numpy().tolist()
-        preds.extend([label_map[it] for it in pred])
-        images.extend(sample['name'])
+        # forward net
+        outputs = model(input_var)
+        prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
+
+        preds.extend([model.args['idx_to_lab'][it] for it in pred_sublevel])
+        groups.extend([model.args['gr_lab'][it] for it in pred])
+        images.extend(inputs['name'])
 
     df = pd.DataFrame()
     df['image'] = images
+    df['group'] = groups
     df['label'] = preds
 
     df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
@@ -115,6 +115,16 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     early_stopping_patience = args.early_stop # patience for early stopping
     bestpoint_file = os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName))
 
+    # tracking all losses and accuracies
+    # valid set
+    all_valid_losses = []
+    all_valid_acc_level_0 = []
+    all_valid_acc_level_1 = []
+    # training set
+    all_train_losses = []
+    all_train_acc_level_0 = []
+    all_train_acc_level_1 = []
+
     for epoch in range(0, args.epochs):
 
         if plateau_counter > early_stopping_patience:
@@ -122,10 +132,17 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
             break
 
         # training the model
-        run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, args.epochs, log)
+        loss, acc_level_0, acc_level_1 = run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, args.epochs, log)
+        all_train_losses.append(loss)
+        all_train_acc_level_0.append(acc_level_0)
+        all_train_acc_level_1.append(acc_level_1)
 
         # validate the valid data
         loss, acc_level_0, acc_level_1 = evaluate(model, BCELoss, CETLoss, valid_loader)
+        all_valid_losses.append(loss)
+        all_valid_acc_level_0.append(acc_level_0)
+        all_valid_acc_level_1.append(acc_level_1)
+
         log.write("\nValid_loss={:.4f}, valid_acc_level_0={:.4f}, valid_acc_level_1={:.4f}\n" \
                 .format(loss, acc_level_0, acc_level_1))
 
@@ -159,7 +176,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
     model.load_state_dict(checkpoint['state_dict'])
 
-    return model
+    return model, all_train_losses, all_train_acc_level_0, all_train_acc_level_1, \
+            all_valid_losses, all_valid_acc_level_0, all_valid_acc_level_1
 
 
 def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epochs, log=None):
@@ -223,16 +241,16 @@ def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epoch
         acc = (pred_sublevel == y).sum() / inputs.size(0)
         acc_level_1.update(acc, inputs.size(0))
 
-        #print(losses.count, data_size)
         # print all messages
         if ((batch_idx + 1) % print_iter == 0) or (losses.count == data_size):
-            log.write( 'Epoch [{:>2}][{:>5.2f} %]\t'
+            log.write( 'Epoch [{:>2}][{:>6.2f} %]\t'
                        'Loss {:.4f}\t'
                        'acc_level_0 {:.4f}\t'
                        'acc_level_1 {:.4f}\n'.format(
                             epoch + 1, losses.count*100/data_size,
                             losses.avg, acc_level_0.avg, acc_level_1.avg))
 
+    return losses.avg, acc_level_0.avg, acc_level_1.avg
 
 def evaluate(model, BCELoss, CETLoss, data_loader):
     """ Evaluate model on labeled data. Used for evaluating on validation data.

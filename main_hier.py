@@ -117,9 +117,12 @@ def main(args):
 
 
     #-----------------------------Training model ------------------------------#
-    model = muh.train(train_loader, valid_loader, model, optimizer, args, log)
+    model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1 = muh.train(train_loader, valid_loader, model, optimizer, args, log)
+    ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
+    ut.loss_acc_plot(tr_acc_0, va_acc_0, 'Accuracy level 0', OUTPUT_WEIGHT_PATH)
+    ut.loss_acc_plot(tr_acc_1, va_acc_1, 'Accuracy level 1', OUTPUT_WEIGHT_PATH)
     #--------------------------------------------------------------------------#
-    """
+
     #-------------------------------- Testing ---------------------------------#
     dset_test = pu.DataLoader(None, TEST_DIR, valid_trans, labels)
     test_loader = DataLoader(dset_test,
@@ -127,9 +130,9 @@ def main(args):
                               shuffle=False,
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
-    mu.predict(test_loader, model, args, label_map, log)
+    muh.make_prediction(test_loader, model, args, log)
     #--------------------------------------------------------------------------#
-    """
+
     return 0
 
 
