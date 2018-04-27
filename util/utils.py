@@ -174,10 +174,10 @@ def loss_acc_plot(train, valid, label, output):
     plt.plot(x, valid, label='Valid')
     plt.ylabel(label)
     plt.xlabel('epoch')
-    plt.xticks(x)
+    plt.xticks(x[0::(len(train)+9)//10])
     plt.legend()
     #plt.show()
-    fig.savefig(output + label + '.png')
+    fig.savefig(output + label + '.png', bbox_inches='tight')
 
 def plot_confusion_matrix(true_labels, pred_labels,
                           classes,
@@ -216,7 +216,7 @@ def plot_confusion_matrix(true_labels, pred_labels,
     #plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    fig.savefig(output+'confusion_matrix.png')
+    fig.savefig(output+'confusion_matrix.png', bbox_inches='tight')
 
 def adjust_learning_rate(optimizer, epoch, lr):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
