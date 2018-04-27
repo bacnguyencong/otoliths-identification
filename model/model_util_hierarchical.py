@@ -149,8 +149,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
                 .format(loss, acc_level_0, acc_level_1))
 
         # remember best accuracy and save checkpoint
-        flag = (abs(acc_level_0 - best_acc_level_0) < 1e-9) and (acc_level_1 > best_acc_level_1)
-        if acc_level_0 > best_acc_level_0 or flag :
+        if acc_level_1 > best_acc_level_1:
             # saving the best results
             best_loss, best_acc_level_0, best_acc_level_1 = loss, acc_level_0, acc_level_1
             best_true_labels, best_pred_labels = true_labels, pred_labels
