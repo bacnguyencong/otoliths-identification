@@ -110,6 +110,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     best_acc_level_0 = -float('inf') # best accuracy
     best_acc_level_1 = -float('inf') # best accuracy
     best_loss = float('inf') # best loss
+    best_true_labels, best_pred_labels = [], [] # used to compute confusion matrix
+
     plateau_counter = 0      # counter of plateau
     lr_patience = args.lr_patience # patience for lr scheduling
     early_stopping_patience = args.early_stop # patience for early stopping
@@ -138,7 +140,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
         all_train_acc_level_1.append(acc_level_1)
 
         # validate the valid data
-        loss, acc_level_0, acc_level_1 = evaluate(model, BCELoss, CETLoss, valid_loader)
+        loss, acc_level_0, acc_level_1,true_labels, pred_labels = evaluate(model, BCELoss, CETLoss, valid_loader)
         all_valid_losses.append(loss)
         all_valid_acc_level_0.append(acc_level_0)
         all_valid_acc_level_1.append(acc_level_1)
@@ -151,6 +153,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
         if acc_level_0 > best_acc_level_0 or flag :
             # saving the best results
             best_loss, best_acc_level_0, best_acc_level_1 = loss, acc_level_0, acc_level_1
+            best_true_labels, best_pred_labels = true_labels, pred_labels
             plateau_counter = 0
             # Save only the best state. Update each time the model improves
             log.write('Saving best model architecture...\n')
@@ -172,12 +175,15 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
 
         log.write("----------------------------------------------------------\n")
 
+    log.write("\nValid_loss={:.4f}, valid_acc_level_0={:.4f}, valid_acc_level_1={:.4f}\n" \
+                .format(best_loss, best_acc_level_0, best_acc_level_1))
     # load the best model
     checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
     model.load_state_dict(checkpoint['state_dict'])
 
     return model, all_train_losses, all_train_acc_level_0, all_train_acc_level_1, \
-            all_valid_losses, all_valid_acc_level_0, all_valid_acc_level_1
+            all_valid_losses, all_valid_acc_level_0, all_valid_acc_level_1, \
+            best_true_labels, best_pred_labels
 
 
 def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epochs, log=None):
@@ -270,6 +276,8 @@ def evaluate(model, BCELoss, CETLoss, data_loader):
     losses = AverageMeter()
     acc_level_0 = AverageMeter()
     acc_level_1 = AverageMeter()
+    true_labels, pred_labels = [], []
+
 
     for batch_idx, (inputs, y) in enumerate(data_loader):
 
@@ -302,7 +310,7 @@ def evaluate(model, BCELoss, CETLoss, data_loader):
             loss += CETLoss(input_var_1, target_var_1) * (target_var_1.data.size(0) / batch_size)
 
         # measure accuracy and record loss
-        prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
+        _, pred, _, pred_sublevel = predict(model, outputs)
 
         losses.update(loss.data[0], inputs.size(0))
         acc = (pred == np.array([model.args['gr_idx'][i] for i in y])).sum() / inputs.size(0)
@@ -310,7 +318,10 @@ def evaluate(model, BCELoss, CETLoss, data_loader):
         acc = (pred_sublevel == y).sum() / inputs.size(0)
         acc_level_1.update(acc, inputs.size(0))
 
-    return losses.avg, acc_level_0.avg, acc_level_1.avg
+        pred_labels.extend(pred_sublevel)
+        true_labels.extend(y.tolist())
+
+    return losses.avg, acc_level_0.avg, acc_level_1.avg, true_labels, pred_labels
 
 
 def adjust_lr_on_plateau(optimizer):

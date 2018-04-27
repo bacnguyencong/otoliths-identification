@@ -117,10 +117,15 @@ def main(args):
 
 
     #-----------------------------Training model ------------------------------#
-    model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1 = muh.train(train_loader, valid_loader, model, optimizer, args, log)
+    model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1, true_labels, pred_labels \
+     = muh.train(train_loader, valid_loader, model, optimizer, args, log)
+    # generate output
     ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
     ut.loss_acc_plot(tr_acc_0, va_acc_0, 'Accuracy level 0', OUTPUT_WEIGHT_PATH)
     ut.loss_acc_plot(tr_acc_1, va_acc_1, 'Accuracy level 1', OUTPUT_WEIGHT_PATH)
+
+    names = [model.args['idx_to_lab'][i] for i in model.args['all_idx']] # class labels
+    ut.plot_confusion_matrix(true_labels, pred_labels, names, OUTPUT_WEIGHT_PATH)
     #--------------------------------------------------------------------------#
 
     #-------------------------------- Testing ---------------------------------#
