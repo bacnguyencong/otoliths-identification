@@ -65,7 +65,8 @@ def main(args):
     # map an id to its second level
     idx_to_subidx = dict([(i, gr_0_idx.index(i)) for i in gr_0_idx] + [(i, gr_1_idx.index(i)) for i in gr_1_idx])
 
-    intput_vars = {
+    # input arguments
+    intput_args = {
         'idx_to_lab':idx_to_lab,
         'lab_to_idx': lab_to_idx,
         'gr_0_lab': gr_0_lab,
@@ -91,14 +92,10 @@ def main(args):
         log.write("=> creating model '{}'\n".format(args.arch))
         model = models.__dict__[args.arch]()
 
-    #model = FineTuneModel(model, args.arch, num_classes)
-    model = FineTuneModel_Hierarchical(model, args.arch, intput_vars, len(gr_0_idx), len(gr_1_idx))
+    model = FineTuneModel_Hierarchical(model, args.arch, intput_args, len(gr_0_idx), len(gr_1_idx))
 
     # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-
-    # criterion
-    #criterion = torch.nn.CrossEntropyLoss()
 
     if GPU_AVAIL:
         model = model.cuda()
@@ -120,8 +117,7 @@ def main(args):
 
 
     #-----------------------------Training model ------------------------------#
-    #model = mu.train(train_loader, valid_loader, model, criterion, optimizer, args,log)
-    model = muh.train(train_loader, valid_loader, model, optimizer, args,log)
+    model = muh.train(train_loader, valid_loader, model, optimizer, args, log)
     #--------------------------------------------------------------------------#
     """
     #-------------------------------- Testing ---------------------------------#

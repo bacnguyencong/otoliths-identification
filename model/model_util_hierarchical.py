@@ -45,21 +45,58 @@ def predict(data_loader, model, args, label_map, log=None):
     df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
     log.write('Finished predicting all images ...\n')
 
-def accuracy(output, target):
-    """ Compute the accuracy """
-    _, pred = torch.max(output, 1)
-    return (pred == target).double().sum()/target.size(0)
+def predict(model, outputs, mask=None):
+    """ Perform prediction
+    Args:
+        mask: if the group is known in advance
+    Returns:
+        prob: probabilities at the group level (being group 1)
+        pred: prediction at the group level (0 or 1)
+        prob_sublevel: probabilies at the sublevel (accoring to each group)
+        pred_sublevel: predictions at the sublevel (accoring to each group)
+    """
 
+    batch_size = outputs.size(0)
+
+    # loss at the first level of being group 1
+    prob = nn.functional.sigmoid(model.level_0(outputs)) # probabilities at first level
+    pred = (prob >= 0.5).data.numpy().reshape(-1) # predictions at first level
+    prob = prob.data.numpy().reshape(-1)
+
+    #if mask is None:
+    mask = pred == 1
+
+    prob_sublevel = np.zeros((mask.shape[0], 3), np.float) # probabilities at second level
+    pred_sublevel = np.zeros(mask.shape, np.int) # predictions at second level
+
+    # loss at the second level
+    if np.any(~mask):
+        idx = np.where(~mask)[0].tolist()
+        prob_0 = nn.functional.softmax(model.level_1_0(outputs[idx, :]), dim=1)
+        _, indices = prob_0.max(1)
+        pred_sublevel[~mask] = [model.args['gr_0_idx'][i] for i in indices.data]
+        prob_sublevel[~mask,:] = prob_0.data.numpy()
+
+    if np.any(mask):
+        idx = np.where(mask)[0].tolist()
+        prob_1 = nn.functional.softmax(model.level_1_1(outputs[idx, :]), dim=1)
+        _, indices = prob_1.max(1)
+        pred_sublevel[mask] = [model.args['gr_1_idx'][i] for i in indices.data]
+        prob_sublevel[mask,:] = prob_1.data.numpy()
+
+    return prob, pred, prob_sublevel, pred_sublevel
 
 def train(train_loader, valid_loader, model, optimizer, args, log=None):
-    """ Training the model
+    """ Train the model
     Args:
         train_loader: the loader for training data set
         valid_loader: the loader for valid data set
         model: the model arquitechture
         optimizer: the optimization solver
-        args: arguments for input
+        args: model arguments
         log: Logger to write output
+    Returns:
+        model: the trained model
     """
     # loss for the first level
     BCELoss = nn.BCEWithLogitsLoss()
@@ -70,7 +107,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
         BCELoss = BCELoss.cuda()
         CETLoss = CETLoss.cuda()
 
-    best_acc = -float('inf') # best accuracy
+    best_acc_level_0 = -float('inf') # best accuracy
+    best_acc_level_1 = -float('inf') # best accuracy
     best_loss = float('inf') # best loss
     plateau_counter = 0      # counter of plateau
     lr_patience = args.lr_patience # patience for lr scheduling
@@ -87,12 +125,15 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
         run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, args.epochs, log)
 
         # validate the valid data
-        loss, acc = evaluate(model, valid_loader, criterion)
-        log.write("\nValid_loss={:.4f}, valid_acc={:.4f}\n".format(loss, acc))
+        loss, acc_level_0, acc_level_1 = evaluate(model, BCELoss, CETLoss, valid_loader)
+        log.write("\nValid_loss={:.4f}, valid_acc_level_0={:.4f}, valid_acc_level_1={:.4f}\n" \
+                .format(loss, acc_level_0, acc_level_1))
 
         # remember best accuracy and save checkpoint
-        if acc > best_acc:
-            best_acc, best_loss = acc, loss
+        flag = (abs(acc_level_0 - best_acc_level_0) < 1e-9) and (acc_level_1 > best_acc_level_1)
+        if acc_level_0 > best_acc_level_0 or flag :
+            # saving the best results
+            best_loss, best_acc_level_0, best_acc_level_1 = loss, acc_level_0, acc_level_1
             plateau_counter = 0
             # Save only the best state. Update each time the model improves
             log.write('Saving best model architecture...\n')
@@ -100,7 +141,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
                 'epoch': epoch + 1,
                 'arch': model.modelName,
                 'state_dict': model.state_dict(),
-                'acc': acc,
+                'acc_level_0': acc_level_0,
+                'acc_level_1': acc_level_1,
                 'loss': loss,
                 'optimizer': optimizer.state_dict(),
             }, bestpoint_file)
@@ -122,30 +164,13 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
 
 def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epochs, log=None):
     """Run one epoch of training."""
-
-    def categorical_to_binary_tensor(labels):
-        """ return a tensor 0 if it belongs to group 0, and 1 if it belongs to group 1"""
-        mask = np.in1d(labels, model.args['gr_1_idx']).astype(np.int)
-        return torch.from_numpy(mask.reshape(-1,1)).float()
-
-    def input_to_tensor(inputs, labels, mask):
-        # check if exists the input
-        if np.any(mask):
-            index = np.where(mask)[0].tolist()
-            y = [ model.args['idx_to_subidx'][it] for it in labels[mask].flatten() ]
-            y = torch.from_numpy(np.array(y).reshape(-1)).long()
-            y = y.cuda() if GPU_AVAIL else y
-
-            return inputs[index, :], Variable(y)
-
-        return None
-
     # switch to train mode
     model.train()
 
-    # define loss and dice recorder
+    # define loss and accuracies at two levels
     losses = AverageMeter()
-    acc = AverageMeter()
+    acc_level_0 = AverageMeter()
+    acc_level_1 = AverageMeter()
 
     data_size = len(train_loader.dataset)
 
@@ -153,7 +178,9 @@ def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epoch
     print_iter = np.ceil(data_size / (10 * train_loader.batch_size))
 
     for batch_idx, (inputs, y) in enumerate(train_loader):
-        targets = categorical_to_binary_tensor(y.data.numpy())
+
+        y = y.numpy() # list of label indices
+        targets = categorical_to_binary_tensor(model, y)
         targets = target.cuda() if GPU_AVAIL else targets
 
         input_var = Variable(inputs.cuda() if GPU_AVAIL else inputs)
@@ -168,75 +195,104 @@ def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epoch
         outputs = model(input_var)
 
         # variable for sub input for each group
-        input_var_0, target_var_0 = input_to_tensor(outputs, y, np.in1d(y, gr_0_idx))
-        input_var_1, target_var_1 = input_to_tensor(outputs, y, np.in1d(y, gr_1_idx))
+        input_var_0, target_var_0 = input_to_tensor(model, outputs, y, np.in1d(y, model.args['gr_0_idx']))
+        #print(y)
+        input_var_1, target_var_1 = input_to_tensor(model, outputs, y, np.in1d(y, model.args['gr_1_idx']))
 
         # loss at the first level
-        loss = BCELoss(net.level_0(outputs), target_var)
+        loss = BCELoss(model.level_0(outputs), target_var)
 
         # loss at the second level
         if not input_var_0 is None:
-            input_var_0 = net.level_1_0(input_var_0)
+            input_var_0 = model.level_1_0(input_var_0)
             loss += CETLoss(input_var_0, target_var_0) * (target_var_0.data.size(0) / batch_size)
+
         if not input_var_1 is None:
-            input_var_1 = net.level_1_1(input_var_1)
+            input_var_1 = model.level_1_1(input_var_1)
             loss += CETLoss(input_var_1, target_var_1) * (target_var_1.data.size(0) / batch_size)
 
         loss.backward()
         optimizer.step()
 
         # measure accuracy and record loss
-        prec = accuracy(output.data, target)
-        losses.update(loss.data[0], dinput.size(0))
-        acc.update(prec, dinput.size(0))
+        prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
 
+        losses.update(loss.data[0], inputs.size(0))
+        acc = (pred == np.array([model.args['gr_idx'][i] for i in y])).sum() / inputs.size(0)
+        acc_level_0.update(acc, inputs.size(0))
+        acc = (pred_sublevel == y).sum() / inputs.size(0)
+        acc_level_1.update(acc, inputs.size(0))
+
+        #print(losses.count, data_size)
         # print all messages
-        if (batch_idx + 1) % print_iter == 0:
-            log.write('Epoch [{:>2}][{:>5.2f} %]\t'
-                  'Loss {:.4f}\t'
-                  'Acc {:.4f}\n'.format(
-                   epoch + 1, batch_idx*100/len(train_loader),
-                   losses.avg, acc.avg))
+        if ((batch_idx + 1) % print_iter == 0) or (losses.count == data_size):
+            log.write( 'Epoch [{:>2}][{:>5.2f} %]\t'
+                       'Loss {:.4f}\t'
+                       'acc_level_0 {:.4f}\t'
+                       'acc_level_1 {:.4f}\n'.format(
+                            epoch + 1, losses.count*100/data_size,
+                            losses.avg, acc_level_0.avg, acc_level_1.avg))
 
 
-def evaluate(model, data_loader, criterion):
+def evaluate(model, BCELoss, CETLoss, data_loader):
     """ Evaluate model on labeled data. Used for evaluating on validation data.
     Args:
         model: the trained model
+        BCELoss: the loss function at first level
+        CETLoss: the loss function at second level
         data_loader: the loader of data set
-        criterion: the loss function
     Return:
-        loss, accuracy
+        loss, acc_level_0, acc_level_1
     """
 
     # switch to evaluate mode
     model.eval()
 
-    # define loss and accuracy recorder
+    # define loss and accuracies at two levels
     losses = AverageMeter()
-    acces = AverageMeter()
+    acc_level_0 = AverageMeter()
+    acc_level_1 = AverageMeter()
 
-    for batch_idx,  (dinput, target) in enumerate(data_loader):
+    for batch_idx, (inputs, y) in enumerate(data_loader):
 
-        dinput = dinput.cuda() if GPU_AVAIL else dinput
-        target = target.cuda() if GPU_AVAIL else target
+        y = y.numpy() # list of label indices
+        targets = categorical_to_binary_tensor(model, y)
+        targets = target.cuda() if GPU_AVAIL else targets
 
-        input_var = Variable(dinput)
-        target_var = Variable(target)
+        input_var = Variable(inputs.cuda() if GPU_AVAIL else inputs, requires_grad=False)
+        target_var = Variable(targets, requires_grad=False)
 
-         # compute output
-        output = model(input_var)
-        loss = criterion(output, target_var)
+        batch_size = inputs.size(0)
 
-        prec = accuracy(output.data, target)
-        losses.update(loss.data[0], dinput.size(0))
-        acces.update(prec, dinput.size(0))
+        # forward net
+        outputs = model(input_var)
+
+        # variable for sub input for each group
+        input_var_0, target_var_0 = input_to_tensor(model, outputs, y, np.in1d(y, model.args['gr_0_idx']))
+        input_var_1, target_var_1 = input_to_tensor(model, outputs, y, np.in1d(y, model.args['gr_1_idx']))
+
+        # loss at the first level
+        loss = BCELoss(model.level_0(outputs), target_var)
+
+        # loss at the second level
+        if not input_var_0 is None:
+            input_var_0 = model.level_1_0(input_var_0)
+            loss += CETLoss(input_var_0, target_var_0) * (target_var_0.data.size(0) / batch_size)
+
+        if not input_var_1 is None:
+            input_var_1 = model.level_1_1(input_var_1)
+            loss += CETLoss(input_var_1, target_var_1) * (target_var_1.data.size(0) / batch_size)
 
         # measure accuracy and record loss
-        acces.update(prec, dinput.size(0))
-        losses.update(loss.data[0], dinput.size(0))
+        prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
 
-    return losses.avg, acces.avg
+        losses.update(loss.data[0], inputs.size(0))
+        acc = (pred == np.array([model.args['gr_idx'][i] for i in y])).sum() / inputs.size(0)
+        acc_level_0.update(acc, inputs.size(0))
+        acc = (pred_sublevel == y).sum() / inputs.size(0)
+        acc_level_1.update(acc, inputs.size(0))
+
+    return losses.avg, acc_level_0.avg, acc_level_1.avg
 
 
 def adjust_lr_on_plateau(optimizer):
@@ -244,3 +300,21 @@ def adjust_lr_on_plateau(optimizer):
     for param_group in optimizer.param_groups:
             param_group['lr'] = param_group['lr']/10
     return optimizer
+
+
+def categorical_to_binary_tensor(model, labels):
+    """ return a tensor 0 if it belongs to group 0, and 1 if it belongs to group 1"""
+    mask = np.in1d(labels, model.args['gr_1_idx']).astype(np.int)
+    return torch.from_numpy(mask.reshape(-1,1)).float()
+
+def input_to_tensor(model, inputs, labels, mask):
+    # check if exists the input
+    if np.any(mask):
+        index = np.where(mask)[0].tolist()
+        y = [ model.args['idx_to_subidx'][it] for it in labels[mask].flatten() ]
+        y = torch.from_numpy(np.array(y).reshape(-1)).long()
+        y = y.cuda() if GPU_AVAIL else y
+
+        return inputs[index, :], Variable(y)
+
+    return None, None
