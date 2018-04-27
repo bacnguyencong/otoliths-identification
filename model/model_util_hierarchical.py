@@ -45,11 +45,13 @@ def make_prediction(data_loader, model, args, format, log=None):
     df['Predicted Taxon'] = groups
     df['Predicted Further_ID'] = preds
     df = df.drop('image', 1)
-    
+    df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
+
+    df = pd.read_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'))
     df = pd.merge(df, format, left_on = ['Picture_ID','Nr_on_picture'], right_on = ['Picture_ID','Nr_on_picture'])
     df = df.sort_values(['Picture_ID', 'Nr_on_picture'], ascending=[True, True])
-
     df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
+    
     log.write('Finished predicting all images ...\n')
 
 def predict(model, outputs, mask=None):

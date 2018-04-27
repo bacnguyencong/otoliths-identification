@@ -139,6 +139,7 @@ def main(args):
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
     df = pd.read_excel(TEST_FILE)
+    print(df)
     muh.make_prediction(test_loader, model, args, df, log)
     #--------------------------------------------------------------------------#
 
