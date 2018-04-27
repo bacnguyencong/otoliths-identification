@@ -15,8 +15,12 @@ if os.path.exists(TEST_DIR):
 
 os.makedirs(TEST_DIR)
 
+num = 0
 for it in img_names.values:
-    file = 'test_all/' + it
-    if os.path.exists(file):
-        copyfile(file, TEST_DIR + it)
+    it = it[2:]
+    file = 'data/test_all/' + it
+    if os.path.isfile(file):
+        num += 1
+        copyfile(file, TEST_DIR + 'F_' + it[0:3] + 'ad' + it[5:])
 
+print('Extracting %d/%d files' % (num, len(img_names)))
