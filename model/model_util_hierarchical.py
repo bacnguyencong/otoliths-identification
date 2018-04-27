@@ -60,8 +60,8 @@ def predict(model, outputs, mask=None):
 
     # loss at the first level of being group 1
     prob = nn.functional.sigmoid(model.level_0(outputs)) # probabilities at first level
-    pred = (prob >= 0.5).data.numpy().reshape(-1) # predictions at first level
-    prob = prob.data.numpy().reshape(-1)
+    pred = (prob >= 0.5).data.cpu().numpy().reshape(-1) # predictions at first level
+    prob = prob.data.cpu().numpy().reshape(-1)
 
     #if mask is None:
     mask = pred == 1
@@ -75,14 +75,14 @@ def predict(model, outputs, mask=None):
         prob_0 = nn.functional.softmax(model.level_1_0(outputs[idx, :]), dim=1)
         _, indices = prob_0.max(1)
         pred_sublevel[~mask] = [model.args['gr_0_idx'][i] for i in indices.data]
-        prob_sublevel[~mask,:] = prob_0.data.numpy()
+        prob_sublevel[~mask,:] = prob_0.data.cpu().numpy()
 
     if np.any(mask):
         idx = np.where(mask)[0].tolist()
         prob_1 = nn.functional.softmax(model.level_1_1(outputs[idx, :]), dim=1)
         _, indices = prob_1.max(1)
         pred_sublevel[mask] = [model.args['gr_1_idx'][i] for i in indices.data]
-        prob_sublevel[mask,:] = prob_1.data.numpy()
+        prob_sublevel[mask,:] = prob_1.data.cpu().numpy()
 
     return prob, pred, prob_sublevel, pred_sublevel
 
@@ -199,7 +199,7 @@ def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epoch
 
         y = y.numpy() # list of label indices
         targets = categorical_to_binary_tensor(model, y)
-        targets = target.cuda() if GPU_AVAIL else targets
+        targets = targets.cuda() if GPU_AVAIL else targets
 
         input_var = Variable(inputs.cuda() if GPU_AVAIL else inputs)
         target_var = Variable(targets)
@@ -275,7 +275,7 @@ def evaluate(model, BCELoss, CETLoss, data_loader):
 
         y = y.numpy() # list of label indices
         targets = categorical_to_binary_tensor(model, y)
-        targets = target.cuda() if GPU_AVAIL else targets
+        targets = targets.cuda() if GPU_AVAIL else targets
 
         input_var = Variable(inputs.cuda() if GPU_AVAIL else inputs, requires_grad=False)
         target_var = Variable(targets, requires_grad=False)
