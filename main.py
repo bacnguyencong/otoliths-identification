@@ -23,7 +23,7 @@ def main(args):
             transforms.ColorJitter(brightness=0.2, contrast=0.2,saturation=0.2),
             transforms.RandomHorizontalFlip(),
             transforms.RandomRotation(15,resample=PIL.Image.BILINEAR, expand=True),
-            transforms.Lambda(lambda x: ut.make_square(x)),                           
+            transforms.Lambda(lambda x: ut.make_square(x)),
             transforms.Resize((args.img_size, args.img_size)),
             transforms.ToTensor(),
             normalize

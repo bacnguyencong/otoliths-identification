@@ -11,6 +11,7 @@ from model import model_util_hierarchical as muh
 from torchvision.datasets import ImageFolder
 
 import numpy as np
+import pandas as pd
 
 from config import *
 
@@ -137,7 +138,8 @@ def main(args):
                               shuffle=False,
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
-    muh.make_prediction(test_loader, model, args, log)
+    df = pd.read_excel(TEST_FILE)
+    muh.make_prediction(test_loader, model, args, df, log)
     #--------------------------------------------------------------------------#
 
     return 0

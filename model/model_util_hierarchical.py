@@ -13,12 +13,13 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-def make_prediction(data_loader, model, args, log=None):
+def make_prediction(data_loader, model, args, format, log=None):
     """Make prediction
     Args:
         data_loader: the loader for the data set
         model: the trained model
         args: the input arguments
+        format: dataframe of input
         log: the logger to write error messages
     """
     # switch to evaluate mode
@@ -39,8 +40,14 @@ def make_prediction(data_loader, model, args, log=None):
 
     df = pd.DataFrame()
     df['image'] = images
-    df['group'] = groups
-    df['label'] = preds
+    df['Picture_ID'] = df['image'].apply(lambda x: x[0:len(x) - x[::-1].find('_')-1])
+    df['Nr_on_picture'] = df['image'].apply(lambda x: x[len(x) - x[::-1].find('_'):len(x) - 4])
+    df['Predicted Taxon'] = groups
+    df['Predicted Further_ID'] = preds
+    df = df.drop('image', 1)
+    
+    df = pd.merge(df, format, left_on = ['Picture_ID','Nr_on_picture'], right_on = ['Picture_ID','Nr_on_picture'])
+    df = df.sort_values(['Picture_ID', 'Nr_on_picture'], ascending=[True, True])
 
     df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
     log.write('Finished predicting all images ...\n')
