@@ -125,6 +125,8 @@ def main(args):
     ut.loss_acc_plot(tr_acc_1, va_acc_1, 'Accuracy level 1', OUTPUT_WEIGHT_PATH)
 
     names = [model.args['idx_to_lab'][i] for i in model.args['all_idx']] # class labels
+    true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
+    pred_labels = [model.args['idx_to_lab'][i] for i in pred_labels]
     ut.plot_confusion_matrix(true_labels, pred_labels, names, OUTPUT_WEIGHT_PATH)
     #--------------------------------------------------------------------------#
 
