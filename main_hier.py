@@ -12,6 +12,7 @@ from torchvision.datasets import ImageFolder
 
 import numpy as np
 import pandas as pd
+import os
 
 from config import *
 
@@ -118,17 +119,22 @@ def main(args):
 
 
     #-----------------------------Training model ------------------------------#
-    model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1, true_labels, pred_labels \
-     = muh.train(train_loader, valid_loader, model, optimizer, args, log)
-    # generate output
-    ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
-    ut.loss_acc_plot(tr_acc_0, va_acc_0, 'Accuracy level 0', OUTPUT_WEIGHT_PATH)
-    ut.loss_acc_plot(tr_acc_1, va_acc_1, 'Accuracy level 1', OUTPUT_WEIGHT_PATH)
+    if not args.testing:
+        # load the best model
+        checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
+        model.load_state_dict(checkpoint['state_dict'])
+    else:
+        model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1, true_labels, pred_labels \
+         = muh.train(train_loader, valid_loader, model, optimizer, args, log)
+        # generate output
+        ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
+        ut.loss_acc_plot(tr_acc_0, va_acc_0, 'Accuracy level 0', OUTPUT_WEIGHT_PATH)
+        ut.loss_acc_plot(tr_acc_1, va_acc_1, 'Accuracy level 1', OUTPUT_WEIGHT_PATH)
 
-    names = [model.args['idx_to_lab'][i] for i in model.args['all_idx']] # class labels
-    true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
-    pred_labels = [model.args['idx_to_lab'][i] for i in pred_labels]
-    ut.plot_confusion_matrix(true_labels, pred_labels, names, OUTPUT_WEIGHT_PATH)
+        names = [model.args['idx_to_lab'][i] for i in model.args['all_idx']] # class labels
+        true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
+        pred_labels = [model.args['idx_to_lab'][i] for i in pred_labels]
+        ut.plot_confusion_matrix(true_labels, pred_labels, names, OUTPUT_WEIGHT_PATH)
     #--------------------------------------------------------------------------#
 
     #-------------------------------- Testing ---------------------------------#
@@ -139,7 +145,6 @@ def main(args):
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
     df = pd.read_excel(TEST_FILE)
-    print(df)
     muh.make_prediction(test_loader, model, args, df, log)
     #--------------------------------------------------------------------------#
 
@@ -167,10 +172,9 @@ if __name__ == '__main__':
     prs.add_argument('--weight_decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
     prs.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', action='store_true', help='use pre-trained model')
+    prs.add_argument('--testing', dest='testing', action='store_false', help='use a trained model')
 
     args = prs.parse_args()
     main(args)
 
     print('running correctly')
-
-#ps.imshow()

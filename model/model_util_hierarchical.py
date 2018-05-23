@@ -32,6 +32,7 @@ def make_prediction(data_loader, model, args, format, log=None):
 
         # forward net
         outputs = model(input_var)
+        print(inputs['name'])
         prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
 
         preds.extend([model.args['idx_to_lab'][it] for it in pred_sublevel])
@@ -72,8 +73,8 @@ def predict(model, outputs, mask=None):
     pred = (prob >= 0.5).data.cpu().numpy().reshape(-1) # predictions at first level
     prob = prob.data.cpu().numpy().reshape(-1)
 
-    #if mask is None:
-    mask = pred == 1
+    if mask is None:
+        mask = pred == 1
 
     prob_sublevel = np.zeros((mask.shape[0], 3), np.float) # probabilities at second level
     pred_sublevel = np.zeros(mask.shape, np.int) # predictions at second level
