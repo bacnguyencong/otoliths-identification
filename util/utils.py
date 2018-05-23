@@ -8,14 +8,16 @@ from sklearn.metrics import confusion_matrix
 import itertools
 
 from skimage.io import imread, imsave
-from skimage.io import imread
 from skimage.color import rgb2grey, label2rgb
-from skimage.morphology import reconstruction, binary_opening
+from skimage.filters import threshold_otsu
+from skimage.morphology import reconstruction, binary_opening, watershed
 import matplotlib.pyplot as plt
 from skimage.measure import label, regionprops
 from scipy.ndimage import gaussian_filter
 import matplotlib.patches as mpatches
 import numpy as np
+from scipy import ndimage as ndi
+from skimage.feature import peak_local_max
 
 def sort_regions(regions):
     """
@@ -44,7 +46,7 @@ def sort_regions(regions):
     return regions_sorted
 
 
-def segment_image(image, remove_bg=True, threshold=0.25, conv_sigma=2,
+def segment_image(image, remove_bg=True, conv_sigma=2,
                     opening_size=30):
     """
     Segment larger regions from an image. Give it an image and it returns a
@@ -54,7 +56,6 @@ def segment_image(image, remove_bg=True, threshold=0.25, conv_sigma=2,
     Inputs:
         - image: greyscale image to segment
         - remove_bg: remove background? (bool, default: True)
-        - threshold: threshold (float, default: 0.25)
         - conv_sigma: sigma of the Gaussian convolution (float, default: 2.0)
         - opening_size: size of the patch for binary opening (int, default: 30)
 
@@ -71,8 +72,17 @@ def segment_image(image, remove_bg=True, threshold=0.25, conv_sigma=2,
     mask = image_greyscale
     dilated = reconstruction(seed, mask, method='erosion')
     # thresholding and binary opening
-    segmentation = binary_opening(dilated > threshold,
+    image_thresholded = dilated > 0.5 * threshold_otsu(dilated)
+    segmentation = binary_opening(image_thresholded,
                                     np.ones((opening_size, opening_size)))
+    if 0:
+        distance = ndi.distance_transform_edt(segmentation)
+        local_maxi = peak_local_max(distance, indices=False,
+                            footprint=np.ones((3, 3)),
+                                    labels=segmentation)
+        markers = ndi.label(local_maxi)[0]
+        label_image = watershed(-distance, markers, mask=segmentation)
+        segmentation = np.logical_or(label_image>0, segmentation)
     if remove_bg:
         image[segmentation==False] = 0
     label_image = label(segmentation)
@@ -80,7 +90,6 @@ def segment_image(image, remove_bg=True, threshold=0.25, conv_sigma=2,
     regions = sort_regions(regionprops(label_image))
 
     return regions
-
 
 def imshow(image, title=None):
     """ show an image """

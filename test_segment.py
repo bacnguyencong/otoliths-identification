@@ -35,7 +35,6 @@ if os.path.exists(TEST_DIR):
     
 os.makedirs(TEST_DIR)
 
-threshold = 0.25
 remove_bg = False
 conv_sigma = 2.0
 opening_size = 30
@@ -46,7 +45,7 @@ for image_path in img_list:
     images_names = os.path.basename(image_path)
     images_names = images_names[0:-4] + '_{}.jpg'
 
-    regions = ut.segment_image(image, remove_bg, threshold, conv_sigma,
+    regions = ut.segment_image(image, remove_bg, conv_sigma,
                         opening_size)
 
     for i, reg in enumerate(regions):

@@ -25,6 +25,8 @@ def make_prediction(data_loader, model, args, format, log=None):
     # switch to evaluate mode
     model.eval()
     images, groups, preds =  [], [], []
+    
+    
 
     for batch_idx, inputs in enumerate(data_loader):
 
@@ -32,8 +34,16 @@ def make_prediction(data_loader, model, args, format, log=None):
 
         # forward net
         outputs = model(input_var)
-        print(inputs['name'])
-        prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
+        mask = []
+        for img_name in inputs['name']:
+            pos = img_name.rfind('_')
+            img_num = int(img_name[pos+1:].split('.')[0])
+            img_name = img_name[0:pos]
+            group = format.loc[(format['Picture_ID'] == img_name) 
+                       & (format['Nr_on_picture'] == img_num)]['Taxon'].values[0]
+            mask.append(group in ['haringachtige', 'Haring', 'Sprot', 'Fint'])
+                
+        prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs, np.array(mask))
 
         preds.extend([model.args['idx_to_lab'][it] for it in pred_sublevel])
         groups.extend([model.args['gr_lab'][it] for it in pred])
@@ -51,9 +61,11 @@ def make_prediction(data_loader, model, args, format, log=None):
     df = pd.read_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'))
     df = pd.merge(df, format, left_on = ['Picture_ID','Nr_on_picture'], right_on = ['Picture_ID','Nr_on_picture'])
     df = df.sort_values(['Picture_ID', 'Nr_on_picture'], ascending=[True, True])
+    df = df[['Picture_ID','Nr_on_picture', 'Taxon', 'Predicted Taxon', 'Further_ID', 'Predicted Further_ID']]
     df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
     
     log.write('Finished predicting all images ...\n')
+
 
 def predict(model, outputs, mask=None):
     """ Perform prediction
@@ -75,6 +87,8 @@ def predict(model, outputs, mask=None):
 
     if mask is None:
         mask = pred == 1
+    else:
+        pred = mask.astype(np.int)
 
     prob_sublevel = np.zeros((mask.shape[0], 3), np.float) # probabilities at second level
     pred_sublevel = np.zeros(mask.shape, np.int) # predictions at second level
