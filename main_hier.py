@@ -138,6 +138,9 @@ def main(args):
     #--------------------------------------------------------------------------#
 
     #-------------------------------- Testing ---------------------------------#
+    muh.make_prediction_on_images(INPUT_TEST_DIR, OUTPUT_TEST_DIR, valid_trans, model)
+    """
+    
     dset_test = pu.DataLoader(None, TEST_DIR, valid_trans, labels)
     test_loader = DataLoader(dset_test,
                               batch_size=args.batch_size,
@@ -147,6 +150,7 @@ def main(args):
     df = pd.read_excel(TEST_FILE)
     muh.make_prediction(test_loader, model, args, df, log)
     #--------------------------------------------------------------------------#
+    """
 
     return 0
 
@@ -177,4 +181,4 @@ if __name__ == '__main__':
     args = prs.parse_args()
     main(args)
 
-    print('running correctly')
+    print('Everything was running correctly!')

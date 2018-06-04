@@ -50,3 +50,28 @@ class DataLoader(Dataset):
 
     def __len__(self):
         return len(self.labels)
+
+
+class DataLoaderFromPILL(Dataset):
+    """Fish dataset"""
+
+    def __init__(self, PIL_img_list, transform=None, classes=None):
+        """
+        Args:
+            PIL_img_list (PIL.Image): List of images
+            transform (callable, optional): Optional transform to be applied on a sample.
+        """
+        self.images = PIL_img_list
+        self.transform = transform
+
+    def __getitem__(self, idx):
+        image = self.images[idx]
+        if self.transform:
+            image = self.transform(image)
+
+        return {'image': image, 'label': -1}
+
+    def __len__(self):
+        return len(self.images)
+
+

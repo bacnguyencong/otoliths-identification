@@ -12,6 +12,100 @@ from torch import nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+import os
+from skimage.io import imread, imsave
+from PIL import Image, ImageFont, ImageDraw
+import matplotlib.patches as mpatches
+import numpy as np
+import ntpath
+
+import util.data_utils as pu
+import util.utils as ut
+from model import model_util_hierarchical as muh
+import shutil
+
+from torch.utils.data import DataLoader
+
+def predict_labels(imgs: Image, transforms, model) -> np.array:
+    dset_test = pu.DataLoaderFromPILL(imgs,  transforms)
+    test_loader = DataLoader(dset_test,
+                              batch_size=4,
+                              shuffle=False,
+                              num_workers=2,
+                              pin_memory=GPU_AVAIL)
+
+    return muh.make_prediction_per_batch(test_loader, model)
+
+
+def make_prediction_on_images(input_dir, output_dir, transforms, model):
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    shutil.copytree(input_dir, output_dir)
+
+    # find all images from a dir
+    img_list = []
+    for img in os.listdir(output_dir):
+        img_list.append(os.path.join(output_dir, img))
+
+    font = ImageFont.truetype("arial.ttf", 30)
+    cl_coding = ['green', 'cyan', 'blue', 'red', 'pink', 'orange']
+
+    for img in img_list:
+        image = imread(img)
+        regions = ut.segment_image(image.copy(), remove_bg=False)
+
+        # get all subfigures to PIL format
+        PIL_img_list = []
+        for i in range(len(regions)):
+            region = regions[i]
+            min_row, min_col, max_row, max_col = region.bbox
+            im = image[min_row:max_row][:, min_col:max_col]
+
+            PIL_img_list.append(Image.fromarray(im))
+
+        # perform testing on subfigures
+        labels = predict_labels(PIL_img_list, transforms, model)
+        image = Image.fromarray(image)
+        dr = ImageDraw.Draw(image)
+        # drawing the predictions
+        for i in range(len(regions)):
+            minr, minc, maxr, maxc = regions[i].bbox
+            color = cl_coding[labels[i]]
+
+            for w in range(5):
+                dr.rectangle(((minc + w, minr + w), (maxc - w, maxr - w)), outline=color)
+
+            dr.text((minc, minr), str(i + 1), font=font, fill=color)
+
+        image.save(os.path.abspath(img))
+
+
+
+def make_prediction_per_batch(data_loader, model):
+    """Make prediction
+    Args:
+        data_loader: the loader for the data set
+        model: the trained model
+        log: the logger to write error messages
+    """
+    # switch to evaluate mode
+    model.eval()
+    preds = []
+
+    for batch_idx, inputs in enumerate(data_loader):
+
+        input_var = Variable(inputs['image'].cuda() if GPU_AVAIL else inputs['image'])
+
+        # forward net
+        outputs = model(input_var)
+        _, _, _, pred_sublevel = predict(model, outputs)
+
+        preds.extend(pred_sublevel)
+
+    return np.array(preds).astype(np.int)
 
 def make_prediction(data_loader, model, args, format, log=None):
     """Make prediction

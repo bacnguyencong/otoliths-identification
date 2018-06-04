@@ -19,6 +19,9 @@ import numpy as np
 from scipy import ndimage as ndi
 from skimage.feature import peak_local_max
 
+
+
+
 def sort_regions(regions):
     """
     Orders the segemented regions so that they match the numbering of a grid
