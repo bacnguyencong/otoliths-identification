@@ -130,6 +130,7 @@ def main(args):
         ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
         ut.loss_acc_plot(tr_acc_0, va_acc_0, 'Accuracy level 0', OUTPUT_WEIGHT_PATH)
         ut.loss_acc_plot(tr_acc_1, va_acc_1, 'Accuracy level 1', OUTPUT_WEIGHT_PATH)
+        ut.plot_color_coding(idx_to_lab, OUTPUT_WEIGHT_PATH)
 
         names = [model.args['idx_to_lab'][i] for i in model.args['all_idx']] # class labels
         true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
@@ -138,7 +139,7 @@ def main(args):
     #--------------------------------------------------------------------------#
 
     #-------------------------------- Testing ---------------------------------#
-    muh.make_prediction_on_images(INPUT_TEST_DIR, OUTPUT_TEST_DIR, valid_trans, model)
+    muh.make_prediction_on_images(INPUT_TEST_DIR, OUTPUT_TEST_DIR, valid_trans, model, log)
     """
     
     dset_test = pu.DataLoader(None, TEST_DIR, valid_trans, labels)

@@ -19,7 +19,8 @@ import numpy as np
 from scipy import ndimage as ndi
 from skimage.feature import peak_local_max
 
-
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatch
 
 
 def sort_regions(regions):
@@ -172,6 +173,22 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+def plot_color_coding(idx_to_lab, output_dir):
+    fig = plt.figure(figsize=[4, 4])
+    ax = fig.add_axes([0, 0, 1, 1])
+    
+    cl_coding = ['green', 'cyan', 'blue', 'red', 'pink', 'orange']
+
+    for i in range(len(idx_to_lab)):
+        r1 = mpatch.Rectangle((0, i), 1, 1, color=cl_coding[i])
+        ax.add_patch(r1)
+        ax.annotate(idx_to_lab[i], xy=(1.2, i+0.2))
+    ax.set_xlim(0, 2)
+    ax.set_ylim(0, len(idx_to_lab))
+    ax.axis('off')
+    fig.savefig(output_dir +'color_coding.png', bbox_inches='tight') 
+
 
 def loss_acc_plot(train, valid, label, output):
     """ Plot accuracies and losses over training

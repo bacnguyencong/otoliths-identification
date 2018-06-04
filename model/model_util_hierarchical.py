@@ -3,6 +3,8 @@
 import os
 import numpy as np
 import pandas as pd
+import glob
+
 from util.utils import AverageMeter
 from  config import *
 
@@ -40,20 +42,24 @@ def predict_labels(imgs: Image, transforms, model) -> np.array:
     return muh.make_prediction_per_batch(test_loader, model)
 
 
-def make_prediction_on_images(input_dir, output_dir, transforms, model):
+def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None):
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(input_dir, output_dir)
 
     # find all images from a dir
     img_list = []
-    for img in os.listdir(output_dir):
-        img_list.append(os.path.join(output_dir, img))
+    for img in glob.iglob(output_dir + '**/*.jpg', recursive=True):
+        img_list.append(os.path.abspath(img))
 
-    font = ImageFont.truetype("arial.ttf", 30)
+    for img in glob.iglob(output_dir + '**/*.tif', recursive=True):
+        img_list.append(os.path.abspath(img))
+
+    font = ImageFont.truetype("FreeSerif.ttf", 30)
     cl_coding = ['green', 'cyan', 'blue', 'red', 'pink', 'orange']
 
     for img in img_list:
+        log.write('Segmenting on {} \n'.format(img))
         image = imread(img)
         regions = ut.segment_image(image.copy(), remove_bg=False)
 
@@ -66,6 +72,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model):
 
             PIL_img_list.append(Image.fromarray(im))
 
+        log.write('Predicting on {} \n'.format(img))
         # perform testing on subfigures
         labels = predict_labels(PIL_img_list, transforms, model)
         image = Image.fromarray(image)
