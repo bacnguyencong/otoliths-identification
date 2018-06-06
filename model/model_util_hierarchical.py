@@ -43,6 +43,15 @@ def predict_labels(imgs: Image, transforms, model) -> np.array:
 
 
 def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None):
+    """
+    Making predictions on the raw images (each one is bounded by a rectangle)
+    :param input_dir:
+    :param output_dir:
+    :param transforms:
+    :param model:
+    :param log:
+    :return:
+    """
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     shutil.copytree(input_dir, output_dir)

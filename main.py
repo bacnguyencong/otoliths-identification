@@ -8,6 +8,7 @@ from torchvision import models, transforms
 from model.CNNs import FineTuneModel
 from model import model_utils as mu
 from torchvision.datasets import ImageFolder
+import os
 
 from config import *
 
@@ -54,6 +55,12 @@ def main(args):
         log.write("=> creating model '{}'\n".format(args.arch))
         model = models.__dict__[args.arch]()
 
+    # freeze some layers
+    for i, child in enumerate(model.children()):
+        if i < 7:
+            for param in child.parameters():
+                param.requires_grad = False
+
     model = FineTuneModel(model, args.arch, num_classes)
 
     # optimizer
@@ -64,7 +71,7 @@ def main(args):
                                  momentum=args.momentum,
                                  weight_decay=args.weight_decay)
     """
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
 
     # criterion
     criterion = torch.nn.CrossEntropyLoss()
@@ -89,10 +96,32 @@ def main(args):
 
 
     #-----------------------------Training model ------------------------------#
-    model = mu.train(train_loader, valid_loader, model, criterion, optimizer, args,log)
+    #model = mu.train(train_loader, valid_loader, model, criterion, optimizer, args,log)
+    #-----------------------------Training model ------------------------------#
+    if not args.testing:
+        # load the best model
+        checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
+        model.load_state_dict(checkpoint['state_dict'])
+    else:
+        model, tr_loss, tr_acc, va_loss, va_acc, true_labels, pred_labels = mu.train(train_loader, valid_loader, model, criterion, optimizer, args,log)
+        # generate output
+        ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
+        ut.loss_acc_plot(tr_acc, va_acc, 'Accuracy', OUTPUT_WEIGHT_PATH)
+        true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
+        pred_labels = [model.args['idx_to_lab'][i] for i in pred_labels]
+        #plot confusion matrix
+        ut.plot_confusion_matrix(true_labels, pred_labels, labels, OUTPUT_WEIGHT_PATH)
+
+    ut.plot_color_coding(labels, OUTPUT_WEIGHT_PATH)
+    #--------------------------------------------------------------------------#
+
     #--------------------------------------------------------------------------#
 
     #-------------------------------- Testing ---------------------------------#
+
+    mu.make_prediction_on_images(INPUT_TEST_DIR, OUTPUT_TEST_DIR, valid_trans, model, log)
+
+    """
     dset_test = pu.DataLoader(None, TEST_DIR, valid_trans, labels)
     test_loader = DataLoader(dset_test,
                               batch_size=args.batch_size,
@@ -100,6 +129,7 @@ def main(args):
                               num_workers=args.workers,
                               pin_memory=GPU_AVAIL)
     mu.predict(test_loader, model, args, label_map, log)
+    """
     #--------------------------------------------------------------------------#
 
     return 0
@@ -126,8 +156,9 @@ if __name__ == '__main__':
     prs.add_argument('--weight_decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
     prs.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', action='store_true', help='use pre-trained model')
+    prs.add_argument('--testing', dest='testing', action='store_false', help='use a trained model')
 
     args = prs.parse_args()
     main(args)
 
-    print('running correctly')
+    print('Everything was running correctly!')

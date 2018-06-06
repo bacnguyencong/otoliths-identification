@@ -13,6 +13,119 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 
+import util.data_utils as pu
+import util.utils as ut
+from torch.utils.data import DataLoader
+
+import os
+from skimage.io import imread, imsave
+from PIL import Image, ImageFont, ImageDraw
+import matplotlib.patches as mpatches
+import numpy as np
+import ntpath
+import shutil
+import glob
+
+
+
+def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None):
+    """
+    Making predictions on the raw images (each one is bounded by a rectangle)
+    :param input_dir:
+    :param output_dir:
+    :param transforms:
+    :param model:
+    :param log:
+    :return:
+    """
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    shutil.copytree(input_dir, output_dir)
+
+    # find all images from a dir
+    img_list = []
+    for img in glob.iglob(output_dir + '**/*.jpg', recursive=True):
+        img_list.append(os.path.abspath(img))
+
+    for img in glob.iglob(output_dir + '**/*.tif', recursive=True):
+        img_list.append(os.path.abspath(img))
+
+    font = ImageFont.truetype("FreeSerif.ttf", 30)
+    cl_coding = ['green', 'cyan', 'blue', 'red', 'pink', 'orange']
+
+    for img in img_list:
+        log.write('Segmenting on {} \n'.format(img))
+        image = imread(img)
+        regions = ut.segment_image(image.copy(), remove_bg=False)
+
+        # get all subfigures to PIL format
+        PIL_img_list = []
+        for i in range(len(regions)):
+            region = regions[i]
+            min_row, min_col, max_row, max_col = region.bbox
+            im = image[min_row:max_row][:, min_col:max_col]
+
+            PIL_img_list.append(Image.fromarray(im))
+
+        log.write('Predicting on {} \n'.format(img))
+        # perform testing on subfigures
+        labels, probs = predict_labels(PIL_img_list, transforms, model)
+        image = Image.fromarray(image)
+        dr = ImageDraw.Draw(image)
+        # drawing the predictions
+        for i in range(len(regions)):
+            minr, minc, maxr, maxc = regions[i].bbox
+            color = cl_coding[labels[i]]
+
+            for w in range(5):
+                dr.rectangle(((minc + w, minr + w), (maxc - w, maxr - w)), outline=color)
+
+            dr.text((minc, minr), str(i + 1), font=font, fill=color)
+            dr.text((maxc, (minr+maxr)/2), '{:.4f}'.format(probs[i]) , font=font, fill=color)
+
+        image.save(os.path.abspath(img))
+
+
+def predict_labels(imgs, transforms, model):
+    dset_test = pu.DataLoaderFromPILL(imgs,  transforms)
+    test_loader = DataLoader(dset_test,
+                              batch_size=4,
+                              shuffle=False,
+                              num_workers=2,
+                              pin_memory=GPU_AVAIL)
+
+    return make_prediction_per_batch(test_loader, model)
+
+
+def make_prediction_per_batch(data_loader, model):
+    """Make prediction
+    Args:
+        data_loader: the loader for the data set
+        model: the trained model
+        log: the logger to write error messages
+    Returns:
+        preds: predicted labels
+        probs: predicted probabilites
+    """
+
+    # switch to evaluate mode
+    model.eval()
+    preds, probs = [], []
+
+    for batch_idx, inputs in enumerate(data_loader):
+
+        input_var = Variable(inputs['image'].cuda() if GPU_AVAIL else inputs['image'])
+
+        # forward net
+        outputs = model(input_var)
+        prob, pred = torch.max(outputs.data, 1)
+
+        preds.extend(pred)
+        probs.extend(prob)
+
+    return (np.array(preds).astype(np.int), np.array(probs))
+
+
 def predict(data_loader, model, args, label_map, log=None):
     """Make prediction
     Args:
@@ -69,6 +182,8 @@ def train(train_loader, valid_loader, model, criterion, optimizer, args, log=Non
     early_stopping_patience = args.early_stop # patience for early stopping
     bestpoint_file = os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName))
 
+    tr_loss, tr_acc, va_loss, va_acc = [], [], [], []
+
     for epoch in range(0, args.epochs):
 
         if plateau_counter > early_stopping_patience:
@@ -76,10 +191,15 @@ def train(train_loader, valid_loader, model, criterion, optimizer, args, log=Non
             break
 
         # training the model
-        run_epoch(train_loader, model, criterion, optimizer, epoch, args.epochs, log)
+        loss, acc = run_epoch(train_loader, model, criterion, optimizer, epoch, args.epochs, log)
+        tr_loss.append(loss)
+        tr_acc.append(acc)
 
         # validate the valid data
-        loss, acc = evaluate(model, valid_loader, criterion)
+        loss, acc,_, _ = evaluate(model, valid_loader, criterion)
+        va_loss.append(loss)
+        va_acc.append(acc)
+
         log.write("\nValid_loss={:.4f}, valid_acc={:.4f}\n".format(loss, acc))
 
         # remember best accuracy and save checkpoint
@@ -109,7 +229,9 @@ def train(train_loader, valid_loader, model, criterion, optimizer, args, log=Non
     checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
     model.load_state_dict(checkpoint['state_dict'])
 
-    return model
+    _, _, true_labels, pred_labels = evaluate(model, valid_loader, criterion)
+
+    return model, tr_loss, tr_acc, va_loss, va_acc, true_labels, pred_labels
 
 
 def run_epoch(train_loader, model, criterion, optimizer, epoch, num_epochs, log=None):
@@ -159,6 +281,8 @@ def run_epoch(train_loader, model, criterion, optimizer, epoch, num_epochs, log=
                    epoch + 1, batch_idx*100/len(train_loader),
                    losses.avg, acc.avg))
 
+    return losses.avg, acc.avg
+
 
 def evaluate(model, data_loader, criterion):
     """ Evaluate model on labeled data. Used for evaluating on validation data.
@@ -176,7 +300,7 @@ def evaluate(model, data_loader, criterion):
     # define loss and accuracy recorder
     losses = AverageMeter()
     acces = AverageMeter()
-
+    pred_labels, true_labels = [], []
     for batch_idx,  (dinput, target) in enumerate(data_loader):
 
         dinput = dinput.cuda() if GPU_AVAIL else dinput
@@ -190,6 +314,11 @@ def evaluate(model, data_loader, criterion):
         loss = criterion(output, target_var)
 
         prec = accuracy(output.data, target)
+
+        _, pred = torch.max(output.data, 1)
+        pred_labels.append(pred)
+        true_labels.append(target.data)
+
         losses.update(loss.data[0], dinput.size(0))
         acces.update(prec, dinput.size(0))
 
@@ -197,7 +326,7 @@ def evaluate(model, data_loader, criterion):
         acces.update(prec, dinput.size(0))
         losses.update(loss.data[0], dinput.size(0))
 
-    return losses.avg, acces.avg
+    return losses.avg, acces.avg, true_labels, pred_labels
 
 
 def adjust_lr_on_plateau(optimizer):
