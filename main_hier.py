@@ -94,10 +94,16 @@ def main(args):
         log.write("=> creating model '{}'\n".format(args.arch))
         model = models.__dict__[args.arch]()
 
+    # freeze some layers
+    for i, child in enumerate(model.children()):
+        if i < 7:
+            for param in child.parameters():
+                param.requires_grad = False
+
     model = FineTuneModel_Hierarchical(model, args.arch, intput_args, len(gr_0_idx), len(gr_1_idx))
 
     # optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr)
 
     if GPU_AVAIL:
         model = model.cuda()
