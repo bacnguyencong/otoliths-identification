@@ -107,8 +107,11 @@ def main(args):
         # generate output
         ut.loss_acc_plot(tr_loss, va_loss, 'Loss', OUTPUT_WEIGHT_PATH)
         ut.loss_acc_plot(tr_acc, va_acc, 'Accuracy', OUTPUT_WEIGHT_PATH)
-        true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
-        pred_labels = [model.args['idx_to_lab'][i] for i in pred_labels]
+
+        print(true_labels, pred_labels)
+
+        true_labels = [labels[i] for i in true_labels]
+        pred_labels = [labels[i] for i in pred_labels]
         #plot confusion matrix
         ut.plot_confusion_matrix(true_labels, pred_labels, labels, OUTPUT_WEIGHT_PATH)
 

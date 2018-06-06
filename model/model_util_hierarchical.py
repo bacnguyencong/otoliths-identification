@@ -39,7 +39,7 @@ def predict_labels(imgs: Image, transforms, model) -> np.array:
                               num_workers=2,
                               pin_memory=GPU_AVAIL)
 
-    return muh.make_prediction_per_batch(test_loader, model)
+    return make_prediction_per_batch(test_loader, model)
 
 
 def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None):
@@ -83,7 +83,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
 
         log.write('Predicting on {} \n'.format(img))
         # perform testing on subfigures
-        labels = predict_labels(PIL_img_list, transforms, model)
+        labels, gprobs, probs = predict_labels(PIL_img_list, transforms, model)
         image = Image.fromarray(image)
         dr = ImageDraw.Draw(image)
         # drawing the predictions
@@ -94,11 +94,11 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
             for w in range(5):
                 dr.rectangle(((minc + w, minr + w), (maxc - w, maxr - w)), outline=color)
 
+            # drawing the number according to the segmentation and its probability
             dr.text((minc, minr), str(i + 1), font=font, fill=color)
+            dr.text(((maxc+minc)/2, maxr), '{:.2f}, {:.2f}'.format(gprobs[i], probs[i]) , font=font, fill=color)
 
         image.save(os.path.abspath(img))
-
-
 
 def make_prediction_per_batch(data_loader, model):
     """Make prediction
@@ -109,7 +109,7 @@ def make_prediction_per_batch(data_loader, model):
     """
     # switch to evaluate mode
     model.eval()
-    preds = []
+    preds, gprobs, probs = [], [], []
 
     for batch_idx, inputs in enumerate(data_loader):
 
@@ -117,11 +117,15 @@ def make_prediction_per_batch(data_loader, model):
 
         # forward net
         outputs = model(input_var)
-        _, _, _, pred_sublevel = predict(model, outputs)
+        prob, _, prob_sublevel, pred_sublevel = predict(model, outputs)
 
         preds.extend(pred_sublevel)
+        gprobs.extend(prob)
+        probs.extend(prob_sublevel)
 
-    return np.array(preds).astype(np.int)
+    probs = np.max(probs, 1)
+
+    return np.array(preds).astype(np.int), np.array(gprobs), np.array(probs)
 
 def make_prediction(data_loader, model, args, format, log=None):
     """Make prediction

@@ -81,7 +81,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
                 dr.rectangle(((minc + w, minr + w), (maxc - w, maxr - w)), outline=color)
 
             dr.text((minc, minr), str(i + 1), font=font, fill=color)
-            dr.text((maxc, (minr+maxr)/2), '{:.4f}'.format(probs[i]) , font=font, fill=color)
+            dr.text(((maxc+minc)/2, maxr), '{:.2f}'.format(probs[i]) , font=font, fill=color)
 
         image.save(os.path.abspath(img))
 
@@ -111,13 +111,14 @@ def make_prediction_per_batch(data_loader, model):
     # switch to evaluate mode
     model.eval()
     preds, probs = [], []
+    sigmoid = nn.Softmax(dim=1)
 
     for batch_idx, inputs in enumerate(data_loader):
 
         input_var = Variable(inputs['image'].cuda() if GPU_AVAIL else inputs['image'])
 
         # forward net
-        outputs = model(input_var)
+        outputs = sigmoid(model(input_var))
         prob, pred = torch.max(outputs.data, 1)
 
         preds.extend(pred)
@@ -138,7 +139,7 @@ def predict(data_loader, model, args, label_map, log=None):
     # switch to evaluate mode
     model.eval()
     images, preds =  [], []
-
+    
     for batch_idx, sample in enumerate(data_loader):
 
         dinput = sample['image'].cuda() if GPU_AVAIL else sample['image']
@@ -301,6 +302,8 @@ def evaluate(model, data_loader, criterion):
     losses = AverageMeter()
     acces = AverageMeter()
     pred_labels, true_labels = [], []
+    sigmoid = nn.Softmax(dim=1)
+
     for batch_idx,  (dinput, target) in enumerate(data_loader):
 
         dinput = dinput.cuda() if GPU_AVAIL else dinput
@@ -310,14 +313,14 @@ def evaluate(model, data_loader, criterion):
         target_var = Variable(target)
 
          # compute output
-        output = model(input_var)
+        output = sigmoid(model(input_var))
         loss = criterion(output, target_var)
 
         prec = accuracy(output.data, target)
 
         _, pred = torch.max(output.data, 1)
-        pred_labels.append(pred)
-        true_labels.append(target.data)
+        pred_labels.extend(pred.cpu().numpy().tolist())
+        true_labels.extend(target.cpu().numpy().tolist())
 
         losses.update(loss.data[0], dinput.size(0))
         acces.update(prec, dinput.size(0))
@@ -333,4 +336,7 @@ def adjust_lr_on_plateau(optimizer):
     """Decrease learning rate by factor 10 if validation loss reaches a plateau"""
     for param_group in optimizer.param_groups:
             param_group['lr'] = param_group['lr']/10
+
     return optimizer
+
+
