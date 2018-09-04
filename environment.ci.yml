@@ -1,0 +1,18 @@
+name: otoliths-identification-env
+channels:
+ - defaults
+ - conda-forge
+dependencies:
+ - flake8=3.5
+ - pytorch
+ - torchvision
+ - joblib=0.12
+ - lxml=4.2
+ - mypy<0.700
+ - numpy=1.14
+ - pandas=0.23
+ - pybind11=2.2
+ - pytest=3.6
+ - scikit-learn=0.19
+ - scipy=1.1
+ - tqdm=4.23

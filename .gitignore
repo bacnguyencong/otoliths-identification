@@ -1,7 +1,14 @@
+# Custom ignores
 output/
-Notebook.ipynb
+notebooks/
 data/
 jobscripts/
+.pytest_cache/
+.vscode/
+notebook.ipynb
+data/
+output/
+.ipynb_checkpoints
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
