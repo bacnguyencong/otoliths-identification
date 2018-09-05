@@ -160,6 +160,7 @@ def main(args):
             map_location=lambda storage, loc: storage
         )
         model.load_state_dict(checkpoint['state_dict'])
+        model.args = checkpoint['args']
         if conf.GPU_AVAIL:
             model = model.cuda()
         # testing

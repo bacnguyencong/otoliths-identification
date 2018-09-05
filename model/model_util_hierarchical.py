@@ -312,6 +312,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
             # Save only the best state. Update each time the model improves
             log.write('Saving best model architecture...\n')
             torch.save({
+                'args': model.args,
                 'epoch': epoch + 1,
                 'arch': model.modelName,
                 'state_dict': model.state_dict(),
@@ -335,6 +336,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     checkpoint = torch.load(os.path.join(
         conf.OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
     model.load_state_dict(checkpoint['state_dict'])
+    model.args = checkpoint['args']
 
     return model, all_train_losses, all_train_acc_level_0, all_train_acc_level_1, \
             all_valid_losses, all_valid_acc_level_0, all_valid_acc_level_1, \
