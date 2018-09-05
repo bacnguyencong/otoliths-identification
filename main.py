@@ -98,7 +98,7 @@ def main(args):
 
     # freeze some layers
     for i, child in enumerate(model.children()):
-        if i < 7:
+        if i < args.freeze:
             for param in child.parameters():
                 param.requires_grad = False
 
@@ -125,7 +125,7 @@ def main(args):
                               shuffle=False,
                               num_workers=args.workers,
                               pin_memory=conf.GPU_AVAIL)
-    
+
     # Training model
     if args.train:
         model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1, \
@@ -158,7 +158,7 @@ def main(args):
         )
         model.load_state_dict(checkpoint['state_dict'])
         model.args = checkpoint['args']
-        
+
         if conf.GPU_AVAIL:
             model = model.cuda()
         # testing
@@ -183,9 +183,12 @@ if __name__ == '__main__':
                      ' (default: resnet18)')
     prs.add_argument('-epochs', default=100, type=int,
                      help='Number of total epochs to run')
+    prs.add_argument('-freeze', default=7, type=int,
+                     help='Number of freezed layers')
     prs.add_argument('-lr_patience', default=5, type=int,
                      help='Number of patience to update lr')
-    prs.add_argument('-early_stop', default=10, type=int, help='Early stopping')
+    prs.add_argument('-early_stop', default=10,
+                     type=int, help='Early stopping')
     prs.add_argument('-j', '--workers', default=4, type=int,
                      metavar='N', help='Number of data loading workers')
     prs.add_argument('-lr', '--lr', default=0.001, type=float,
@@ -198,8 +201,10 @@ if __name__ == '__main__':
                      metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', default=True,
                      action='store_true', help='use pre-trained model')
-    prs.add_argument('--test', dest='test', action='store_true', help='make prediction')
-    prs.add_argument('--train', dest='train', action='store_true', help='train the model')
+    prs.add_argument('--test', dest='test',
+                     action='store_true', help='make prediction')
+    prs.add_argument('--train', dest='train',
+                     action='store_true', help='train the model')
 
     args = prs.parse_args()
     main(args)
