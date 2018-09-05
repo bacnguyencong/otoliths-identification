@@ -362,9 +362,9 @@ def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epoch
 
         y = y.numpy() # list of label indices
         targets = categorical_to_binary_tensor(model, y)
-        targets = targets.cuda() if GPU_AVAIL else targets
+        targets = targets.cuda() if conf.GPU_AVAIL else targets
 
-        input_var = Variable(inputs.cuda() if GPU_AVAIL else inputs)
+        input_var = Variable(inputs.cuda() if conf.GPU_AVAIL else inputs)
         target_var = Variable(targets)
 
         batch_size = inputs.size(0)
