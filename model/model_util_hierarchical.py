@@ -297,11 +297,11 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
             torch.save({
                 'epoch': epoch + 1,
                 'arch': model.modelName,
-                'state_dict': model.state_dict().cpu(),
+                'state_dict': model.cpu().state_dict(),
                 'acc_level_0': acc_level_0,
                 'acc_level_1': acc_level_1,
                 'loss': loss,
-                'optimizer': optimizer.state_dict().cpu(),
+                'optimizer': optimizer.cpu().state_dict().cpu(),
             }, bestpoint_file)
         else:
             plateau_counter += 1
