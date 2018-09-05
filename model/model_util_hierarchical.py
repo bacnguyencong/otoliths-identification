@@ -60,12 +60,15 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
 
     font = ImageFont.truetype("FreeSerif.ttf", 30)
     cl_coding = ['green', 'cyan', 'blue', 'red', 'pink', 'orange']
+    
+    results = []
 
     for img in img_list:
         log.write('Segmenting on {} \n'.format(img))
         image = imread(img)
+        imgname = os.path.basename(img)
         regions = ut.segment_image(image.copy(), remove_bg=False)
-        print(img)
+
         # get all subfigures to PIL format
         PIL_img_list = []
         for i in range(len(regions)):
@@ -77,7 +80,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
 
         log.write('Predicting on {} \n'.format(img))
         # perform testing on subfigures
-        labels, gprobs, probs = predict_labels(PIL_img_list, transforms, model)
+        labels, gprobs, probs, pred_gps = predict_labels(PIL_img_list, transforms, model)
         image = Image.fromarray(image)
         dr = ImageDraw.Draw(image)
         # drawing the predictions
@@ -92,7 +95,11 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
             dr.text((minc, minr), str(i + 1), font=font, fill=color)
             dr.text(((maxc+minc)/2, maxr), '{:.2f}, {:.2f}'.format(gprobs[i], probs[i]) , font=font, fill=color)
 
+            results.append([imgname, i, pred_gps[i], labels[i], gprobs[i], probs[i]])
+        
         image.save(os.path.abspath(img))
+    df = pd.DataFrame(results, columns=['Picture_ID', 'Nr_on_picture', 'Taxon', 'Further_ID', 'Probability Taxon', 'Probability Further_ID'])
+    df.to_csv(os.path.join(conf.OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
 
 def make_prediction_per_batch(data_loader, model):
     """Make prediction
@@ -103,7 +110,7 @@ def make_prediction_per_batch(data_loader, model):
     """
     # switch to evaluate mode
     model.eval()
-    preds, gprobs, probs = [], [], []
+    preds, gprobs, probs, pred_gps = [], [], [], []
 
     for batch_idx, inputs in enumerate(data_loader):
 
@@ -112,15 +119,16 @@ def make_prediction_per_batch(data_loader, model):
 
         # forward net
         outputs = model(input_var)
-        prob, _, prob_sublevel, pred_sublevel = predict(model, outputs)
+        prob, pred_group, prob_sublevel, pred_sublevel = predict(model, outputs)
 
         preds.extend(pred_sublevel)
         gprobs.extend(prob)
+        pred_gps.extend(pred_group)
         probs.extend(prob_sublevel)
 
     probs = np.max(probs, 1)
 
-    return np.array(preds).astype(np.int), np.array(gprobs), np.array(probs)
+    return np.array(preds).astype(np.int), np.array(gprobs), np.array(probs), np.array(pred_gps)
 
 def make_prediction(data_loader, model, args, format, log=None):
     """Make prediction
