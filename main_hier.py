@@ -166,6 +166,7 @@ def main(args):
         muh.make_prediction_on_images(
             conf.INPUT_TEST_DIR, conf.OUTPUT_TEST_DIR, valid_trans, model, log)
 
+        """
         dset_test = pu.DataLoader(None, conf.TEST_DIR, valid_trans, labels)
         test_loader = DataLoader(
             dset_test,
@@ -176,6 +177,7 @@ def main(args):
         )
         df = pd.read_excel(conf.TEST_FILE)
         muh.make_prediction(test_loader, model, args, df, log)
+        """
 
     return 0
 
