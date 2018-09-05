@@ -50,7 +50,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
         shutil.rmtree(output_dir)
     shutil.copytree(input_dir, output_dir)
 
-    args = model.args['idx_to_lab']
+    args = model.args
 
     # find all images from a dir
     img_list = []
@@ -99,7 +99,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
 
             results.append([
                 imgname,
-                i,
+                i + 1,
                 args['gr_lab'][pred_gps[i]],
                 args['idx_to_lab'][labels[i]],
                 gprobs[i],
