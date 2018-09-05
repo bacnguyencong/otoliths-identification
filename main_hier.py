@@ -210,10 +210,8 @@ if __name__ == '__main__':
                      metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', default=True,
                      action='store_true', help='use pre-trained model')
-    prs.add_argument('--test', dest='test', default=True,
-                     action='store_true', help='make prediction')
-    prs.add_argument('--train', dest='train', default=True,
-                     action='store_true', help='train the model')
+    prs.add_argument('--test', dest='test', action='store_true', help='make prediction')
+    prs.add_argument('--train', dest='train', action='store_true', help='train the model')
 
     args = prs.parse_args()
     main(args)
