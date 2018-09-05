@@ -2,7 +2,7 @@
 
 # activate python environment
 export CUDA_VISIBLE_DEVICES=2
-source activate pytorch_gpu
+source activate otoliths-identification-env
 
 # Move to src directory
 cd ..
