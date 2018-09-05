@@ -301,7 +301,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
                 'acc_level_0': acc_level_0,
                 'acc_level_1': acc_level_1,
                 'loss': loss,
-                'optimizer': optimizer.cpu().state_dict().cpu(),
+                'optimizer': optimizer.state_dict(),
             }, bestpoint_file)
         else:
             plateau_counter += 1
