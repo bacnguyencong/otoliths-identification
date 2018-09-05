@@ -156,7 +156,8 @@ def main(args):
             os.path.join(
                 conf.OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(
                     model.modelName
-                ))
+                )),
+            map_location=lambda storage, loc: storage
         )
         model.load_state_dict(checkpoint['state_dict'])
         if conf.GPU_AVAIL:

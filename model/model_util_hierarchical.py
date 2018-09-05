@@ -297,14 +297,12 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
             torch.save({
                 'epoch': epoch + 1,
                 'arch': model.modelName,
-                'state_dict': model.cpu().state_dict(),
+                'state_dict': model.state_dict(),
                 'acc_level_0': acc_level_0,
                 'acc_level_1': acc_level_1,
                 'loss': loss,
                 'optimizer': optimizer.state_dict(),
             }, bestpoint_file)
-            if conf.GPU_AVAIL:
-                model = model.cuda()
         else:
             plateau_counter += 1
 
