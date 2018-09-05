@@ -150,7 +150,7 @@ def main(args):
         ut.plot_confusion_matrix(
             true_labels, pred_labels, names, conf.OUTPUT_WEIGHT_PATH)
 
-    if args.testing:
+    if args.test:
         # load the best model
         checkpoint = torch.load(
             os.path.join(
