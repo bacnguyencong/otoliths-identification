@@ -2,7 +2,6 @@ import argparse
 import os
 
 import numpy as np
-import pandas as pd
 import PIL
 import torch
 from torch.utils.data import DataLoader
@@ -12,7 +11,6 @@ from torchvision.datasets import ImageFolder
 import util.utils as ut
 import config as conf
 from model import model_util_hierarchical as muh
-import util.data_utils as pu
 from model.CNNs import FineTuneModel_Hierarchical
 
 
@@ -47,7 +45,6 @@ def main(args):
 
     # data loader for training
     dset_train = ImageFolder(root=conf.TRAIN_DIR, transform=input_trans)
-    labels = dset_train.classes  # all lables
 
     # Configure
     # preprocessing
@@ -167,20 +164,6 @@ def main(args):
         # testing
         muh.make_prediction_on_images(
             conf.INPUT_TEST_DIR, conf.OUTPUT_TEST_DIR, valid_trans, model, log)
-
-        """
-        dset_test = pu.DataLoader(None, conf.TEST_DIR, valid_trans, labels)
-        test_loader = DataLoader(
-            dset_test,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=args.workers,
-            pin_memory=conf.GPU_AVAIL
-        )
-        df = pd.read_excel(conf.TEST_FILE)
-        muh.make_prediction(test_loader, model, args, df, log)
-        """
-
     return 0
 
 
