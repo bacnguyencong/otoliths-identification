@@ -50,6 +50,8 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
         shutil.rmtree(output_dir)
     shutil.copytree(input_dir, output_dir)
 
+    args = model.args['idx_to_lab']
+
     # find all images from a dir
     img_list = []
     for img in glob.iglob(output_dir + '**/*.jpg', recursive=True):
@@ -93,9 +95,16 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
 
             # drawing the number according to the segmentation and its probability
             dr.text((minc, minr), str(i + 1), font=font, fill=color)
-            dr.text(((maxc+minc)/2, maxr), '{:.2f}, {:.2f}'.format(gprobs[i], probs[i]) , font=font, fill=color)
+            dr.text(((maxc+minc)/2, maxr), '{:.2f}, {:.2f}'.format(gprobs[i], probs[i]), font=font, fill=color)
 
-            results.append([imgname, i, pred_gps[i], labels[i], gprobs[i], probs[i]])
+            results.append([
+                imgname,
+                i,
+                args['gr_lab'][pred_gps[i]],
+                args['idx_to_lab'][labels[i]],
+                gprobs[i],
+                probs[i]]
+            )
         
         image.save(os.path.abspath(img))
     df = pd.DataFrame(results, columns=['Picture_ID', 'Nr_on_picture', 'Taxon', 'Further_ID', 'Probability Taxon', 'Probability Further_ID'])
