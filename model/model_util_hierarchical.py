@@ -303,6 +303,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
                 'loss': loss,
                 'optimizer': optimizer.state_dict(),
             }, bestpoint_file)
+            if conf.GPU_AVAIL:
+                model = model.cuda()
         else:
             plateau_counter += 1
 
