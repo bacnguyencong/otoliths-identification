@@ -65,7 +65,7 @@ def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None
         log.write('Segmenting on {} \n'.format(img))
         image = imread(img)
         regions = ut.segment_image(image.copy(), remove_bg=False)
-
+        print(img)
         # get all subfigures to PIL format
         PIL_img_list = []
         for i in range(len(regions)):
@@ -107,7 +107,8 @@ def make_prediction_per_batch(data_loader, model):
 
     for batch_idx, inputs in enumerate(data_loader):
 
-        input_var = Variable(inputs['image'].cuda() if GPU_AVAIL else inputs['image'])
+        input_var = Variable(inputs['image'].cuda()
+                             if conf.GPU_AVAIL else inputs['image'])
 
         # forward net
         outputs = model(input_var)
@@ -138,7 +139,8 @@ def make_prediction(data_loader, model, args, format, log=None):
 
     for batch_idx, inputs in enumerate(data_loader):
 
-        input_var = Variable(inputs['image'].cuda() if GPU_AVAIL else inputs['image'])
+        input_var = Variable(inputs['image'].cuda()
+                             if conf.GPU_AVAIL else inputs['image'])
 
         # forward net
         outputs = model(input_var)
@@ -295,11 +297,11 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
             torch.save({
                 'epoch': epoch + 1,
                 'arch': model.modelName,
-                'state_dict': model.state_dict(),
+                'state_dict': model.state_dict().cpu(),
                 'acc_level_0': acc_level_0,
                 'acc_level_1': acc_level_1,
                 'loss': loss,
-                'optimizer': optimizer.state_dict(),
+                'optimizer': optimizer.state_dict().cpu(),
             }, bestpoint_file)
         else:
             plateau_counter += 1
@@ -419,9 +421,9 @@ def evaluate(model, BCELoss, CETLoss, data_loader):
 
         y = y.numpy() # list of label indices
         targets = categorical_to_binary_tensor(model, y)
-        targets = targets.cuda() if GPU_AVAIL else targets
+        targets = targets.cuda() if conf.GPU_AVAIL else targets
 
-        input_var = Variable(inputs.cuda() if GPU_AVAIL else inputs, requires_grad=False)
+        input_var = Variable(inputs.cuda() if conf.GPU_AVAIL else inputs, requires_grad=False)
         target_var = Variable(targets, requires_grad=False)
 
         batch_size = inputs.size(0)

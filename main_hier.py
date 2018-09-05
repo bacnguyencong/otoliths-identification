@@ -2,6 +2,7 @@ import argparse
 import os
 
 import numpy as np
+import pandas as pd
 import PIL
 import torch
 from torch.utils.data import DataLoader
@@ -11,6 +12,7 @@ from torchvision.datasets import ImageFolder
 import util.utils as ut
 import config as conf
 from model import model_util_hierarchical as muh
+import util.data_utils as pu
 from model.CNNs import FineTuneModel_Hierarchical
 
 
@@ -126,17 +128,9 @@ def main(args):
                               num_workers=args.workers,
                               pin_memory=conf.GPU_AVAIL)
 
+    
     # Training model
-    if not args.testing:
-        # load the best model
-        checkpoint = torch.load(
-            os.path.join(
-                conf.OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(
-                    model.modelName
-                ))
-        )
-        model.load_state_dict(checkpoint['state_dict'])
-    else:
+    if args.train:
         model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1, \
             true_labels, pred_labels \
             = muh.train(train_loader, valid_loader, model, optimizer, args,
@@ -156,19 +150,31 @@ def main(args):
         ut.plot_confusion_matrix(
             true_labels, pred_labels, names, conf.OUTPUT_WEIGHT_PATH)
 
-    #  Testing
-    muh.make_prediction_on_images(
-        conf.INPUT_TEST_DIR, conf.OUTPUT_TEST_DIR, valid_trans, model, log)
-    """
-    dset_test = pu.DataLoader(None, TEST_DIR, valid_trans, labels)
-    test_loader = DataLoader(dset_test,
-                              batch_size=args.batch_size,
-                              shuffle=False,
-                              num_workers=args.workers,
-                              pin_memory=GPU_AVAIL)
-    df = pd.read_excel(TEST_FILE)
-    muh.make_prediction(test_loader, model, args, df, log)
-    """
+    if args.testing:
+        # load the best model
+        checkpoint = torch.load(
+            os.path.join(
+                conf.OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(
+                    model.modelName
+                ))
+        )
+        model.load_state_dict(checkpoint['state_dict'])
+        if conf.GPU_AVAIL:
+            model = model.cuda()
+        # testing
+        muh.make_prediction_on_images(
+            conf.INPUT_TEST_DIR, conf.OUTPUT_TEST_DIR, valid_trans, model, log)
+
+        dset_test = pu.DataLoader(None, conf.TEST_DIR, valid_trans, labels)
+        test_loader = DataLoader(
+            dset_test,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=args.workers,
+            pin_memory=conf.GPU_AVAIL
+        )
+        df = pd.read_excel(conf.TEST_FILE)
+        muh.make_prediction(test_loader, model, args, df, log)
 
     return 0
 
@@ -178,7 +184,7 @@ if __name__ == '__main__':
                          if name.islower() and not name.startswith("__")
                          and callable(models.__dict__[name]))
 
-    prs = argparse.ArgumentParser(description='Fish challenge')
+    prs = argparse.ArgumentParser(description='Otoliths identification')
     prs.add_argument('-message', default=' ', type=str,
                      help='Message to describe experiment in spreadsheet')
     prs.add_argument('-img_size', default=224, type=int,
@@ -187,12 +193,12 @@ if __name__ == '__main__':
                      choices=model_names, help='model architecture: ' +
                      ' | '.join(model_names) +
                      ' (default: resnet18)')
-    prs.add_argument('-epochs', default=10, type=int,
+    prs.add_argument('-epochs', default=100, type=int,
                      help='Number of total epochs to run')
-    prs.add_argument('-lr_patience', default=3, type=int,
+    prs.add_argument('-lr_patience', default=5, type=int,
                      help='Number of patience to update lr')
-    prs.add_argument('-early_stop', default=5, type=int, help='Early stopping')
-    prs.add_argument('-j', '--workers', default=2, type=int,
+    prs.add_argument('-early_stop', default=10, type=int, help='Early stopping')
+    prs.add_argument('-j', '--workers', default=4, type=int,
                      metavar='N', help='Number of data loading workers')
     prs.add_argument('-lr', '--lr', default=0.001, type=float,
                      metavar='LR', help='Initial learning rate')
@@ -202,10 +208,12 @@ if __name__ == '__main__':
                      type=float, metavar='W', help='weight decay (default: 1e-4)')
     prs.add_argument('--momentum', default=0.9, type=float,
                      metavar='M', help='momentum')
-    prs.add_argument('--pretrained', dest='pretrained',
+    prs.add_argument('--pretrained', dest='pretrained', default=True,
                      action='store_true', help='use pre-trained model')
-    prs.add_argument('--testing', dest='testing',
-                     action='store_false', help='use a trained model')
+    prs.add_argument('--test', dest='test', default=True,
+                     action='store_true', help='make prediction')
+    prs.add_argument('--train', dest='train', default=True,
+                     action='store_true', help='train the model')
 
     args = prs.parse_args()
     main(args)
