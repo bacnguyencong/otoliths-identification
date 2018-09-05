@@ -1,16 +1,18 @@
-import util.data_utils as pu
-import util.utils as ut
-from torch.utils.data import DataLoader
 import argparse
-import torch
-import PIL
-from torchvision import models, transforms
-from model.CNNs import FineTuneModel
-from model import model_utils as mu
-from torchvision.datasets import ImageFolder
 import os
 
+import PIL
+import torch
+from torch.utils.data import DataLoader
+from torchvision import models, transforms
+from torchvision.datasets import ImageFolder
+
+import util.data_utils as pu
+import util.utils as ut
 from config import *
+from model import model_utils as mu
+from model.CNNs import FineTuneModel
+
 
 def main(args):
 

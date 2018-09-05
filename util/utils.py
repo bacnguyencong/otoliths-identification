@@ -1,26 +1,22 @@
+import itertools
+import sys
+
+import matplotlib.patches as mpatch
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import sys
-import matplotlib.pyplot as plt
-import cv2
 from PIL import Image
-from sklearn.metrics import confusion_matrix
-import itertools
-
-from skimage.io import imread, imsave
-from skimage.color import rgb2grey, label2rgb
-from skimage.filters import threshold_otsu
-from skimage.morphology import reconstruction, binary_opening, watershed
-import matplotlib.pyplot as plt
-from skimage.measure import label, regionprops
-from scipy.ndimage import gaussian_filter
-import matplotlib.patches as mpatches
-import numpy as np
 from scipy import ndimage as ndi
+from scipy.ndimage import gaussian_filter
+from skimage.color import label2rgb, rgb2grey
 from skimage.feature import peak_local_max
+from skimage.filters import threshold_otsu
+from skimage.io import imread, imsave
+from skimage.measure import label, regionprops
+from skimage.morphology import binary_opening, reconstruction, watershed
+from sklearn.metrics import confusion_matrix
 
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatch
+import cv2
 
 
 def sort_regions(regions):

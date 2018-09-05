@@ -16,3 +16,8 @@ dependencies:
  - scikit-learn=0.19
  - scipy=1.1
  - tqdm=4.23
+ - notebook
+ - matplotlib
+ - opencv
+ - scikit-image
+ - seaborn

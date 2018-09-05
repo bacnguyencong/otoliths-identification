@@ -13,16 +13,15 @@ Module to segment the otoliths (or other things) from an image.
 """
 
 
-from skimage.io import imread, imsave
-from skimage.io import imread
-
-from skimage.color import rgb2grey, label2rgb
-from skimage.morphology import reconstruction, binary_opening
-import matplotlib.pyplot as plt
-from skimage.measure import label, regionprops
-from scipy.ndimage import gaussian_filter
 import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
 import numpy as np
+from scipy.ndimage import gaussian_filter
+from skimage.color import label2rgb, rgb2grey
+from skimage.io import imread, imsave
+from skimage.measure import label, regionprops
+from skimage.morphology import binary_opening, reconstruction
+
 
 def sort_regions(regions):
     """

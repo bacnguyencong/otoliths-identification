@@ -1,43 +1,37 @@
 # Model utility functions such as loss functions, CNN building blocks etc.
 
-import os
-import numpy as np
-import pandas as pd
 import glob
-
-from util.utils import AverageMeter
-from  config import *
-
-import torch
-from torch.nn.modules.loss import _Loss, _WeightedLoss
-from torch import nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
+import ntpath
 import os
-from skimage.io import imread, imsave
-from PIL import Image, ImageFont, ImageDraw
+import shutil
+
 import matplotlib.patches as mpatches
 import numpy as np
-import ntpath
+import pandas as pd
+import torch
+from PIL import Image, ImageDraw, ImageFont
+from skimage.io import imread, imsave
+from torch import nn
+from torch.autograd import Variable
+from torch.utils.data import DataLoader
 
 import util.data_utils as pu
 import util.utils as ut
+from config import *
+import config as conf
 from model import model_util_hierarchical as muh
-import shutil
+from util.utils import AverageMeter
 
-from torch.utils.data import DataLoader
 
 def predict_labels(imgs: Image, transforms, model) -> np.array:
-    dset_test = pu.DataLoaderFromPILL(imgs,  transforms)
-    test_loader = DataLoader(dset_test,
-                              batch_size=4,
-                              shuffle=False,
-                              num_workers=2,
-                              pin_memory=GPU_AVAIL)
+    set_test = pu.DataLoaderFromPILL(imgs,  transforms)
+    test_loader = DataLoader(
+        set_test,
+        batch_size=4,
+        shuffle=False,
+        num_workers=2,
+        pin_memory=conf.GPU_AVAIL
+    )
 
     return make_prediction_per_batch(test_loader, model)
 
@@ -170,13 +164,15 @@ def make_prediction(data_loader, model, args, format, log=None):
     df['Predicted Taxon'] = groups
     df['Predicted Further_ID'] = preds
     df = df.drop('image', 1)
-    df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
+    df.to_csv(os.path.join(conf.OUTPUT_WEIGHT_PATH,
+                           'predictions.csv'), index=False)
 
-    df = pd.read_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'))
+    df = pd.read_csv(os.path.join(conf.OUTPUT_WEIGHT_PATH, 'predictions.csv'))
     df = pd.merge(df, format, left_on = ['Picture_ID','Nr_on_picture'], right_on = ['Picture_ID','Nr_on_picture'])
     df = df.sort_values(['Picture_ID', 'Nr_on_picture'], ascending=[True, True])
     df = df[['Picture_ID','Nr_on_picture', 'Taxon', 'Predicted Taxon', 'Further_ID', 'Predicted Further_ID']]
-    df.to_csv(os.path.join(OUTPUT_WEIGHT_PATH, 'predictions.csv'), index=False)
+    df.to_csv(os.path.join(conf.OUTPUT_WEIGHT_PATH,
+                           'predictions.csv'), index=False)
     
     log.write('Finished predicting all images ...\n')
 
@@ -195,7 +191,8 @@ def predict(model, outputs, mask=None):
     batch_size = outputs.size(0)
 
     # loss at the first level of being group 1
-    prob = nn.functional.sigmoid(model.level_0(outputs)) # probabilities at first level
+    # probabilities at first level
+    prob = torch.sigmoid(model.level_0(outputs))
     pred = (prob >= 0.5).data.cpu().numpy().reshape(-1) # predictions at first level
     prob = prob.data.cpu().numpy().reshape(-1)
 
@@ -241,7 +238,7 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     # loss for the second level
     CETLoss = nn.CrossEntropyLoss()
 
-    if GPU_AVAIL:
+    if conf.GPU_AVAIL:
         BCELoss = BCELoss.cuda()
         CETLoss = CETLoss.cuda()
 
@@ -253,7 +250,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     plateau_counter = 0      # counter of plateau
     lr_patience = args.lr_patience # patience for lr scheduling
     early_stopping_patience = args.early_stop # patience for early stopping
-    bestpoint_file = os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName))
+    bestpoint_file = os.path.join(
+        conf.OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName))
 
     # tracking all losses and accuracies
     # valid set
@@ -315,7 +313,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
     log.write("\nValid_loss={:.4f}, valid_acc_level_0={:.4f}, valid_acc_level_1={:.4f}\n" \
                 .format(best_loss, best_acc_level_0, best_acc_level_1))
     # load the best model
-    checkpoint = torch.load(os.path.join(OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
+    checkpoint = torch.load(os.path.join(
+        conf.OUTPUT_WEIGHT_PATH, 'best_{}.pth.tar'.format(model.modelName)))
     model.load_state_dict(checkpoint['state_dict'])
 
     return model, all_train_losses, all_train_acc_level_0, all_train_acc_level_1, \
@@ -378,7 +377,7 @@ def run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, num_epoch
         # measure accuracy and record loss
         prob, pred, prob_sublevel, pred_sublevel = predict(model, outputs)
 
-        losses.update(loss.data[0], inputs.size(0))
+        losses.update(loss.item(), inputs.size(0))
         acc = (pred == np.array([model.args['gr_idx'][i] for i in y])).sum() / inputs.size(0)
         acc_level_0.update(acc, inputs.size(0))
         acc = (pred_sublevel == y).sum() / inputs.size(0)
@@ -449,7 +448,7 @@ def evaluate(model, BCELoss, CETLoss, data_loader):
         # measure accuracy and record loss
         _, pred, _, pred_sublevel = predict(model, outputs)
 
-        losses.update(loss.data[0], inputs.size(0))
+        losses.update(loss.item(), inputs.size(0))
         acc = (pred == np.array([model.args['gr_idx'][i] for i in y])).sum() / inputs.size(0)
         acc_level_0.update(acc, inputs.size(0))
         acc = (pred_sublevel == y).sum() / inputs.size(0)
@@ -479,7 +478,7 @@ def input_to_tensor(model, inputs, labels, mask):
         index = np.where(mask)[0].tolist()
         y = [ model.args['idx_to_subidx'][it] for it in labels[mask].flatten() ]
         y = torch.from_numpy(np.array(y).reshape(-1)).long()
-        y = y.cuda() if GPU_AVAIL else y
+        y = y.cuda() if conf.GPU_AVAIL else y
 
         return inputs[index, :], Variable(y)
 

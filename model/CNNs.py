@@ -1,12 +1,12 @@
-import torch
-import torchvision
-import torch.nn as nn
 import numpy as np
-import torch.utils.data as data
-import torchvision.transforms as transforms
-import torchvision.datasets as dsets
-from torch.autograd import Variable
+import torch
+import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.data as data
+import torchvision
+import torchvision.datasets as dsets
+import torchvision.transforms as transforms
+from torch.autograd import Variable
 
 kernel_size = 2
 depth_size1 = 3

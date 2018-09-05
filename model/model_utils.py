@@ -1,31 +1,26 @@
 # Model utility functions such as loss functions, CNN building blocks etc.
 
+import glob
+import ntpath
 import os
+import shutil
+
+import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
-from util.utils import AverageMeter
-from  config import *
-
 import torch
-from torch.nn.modules.loss import _Loss, _WeightedLoss
-from torch import nn
 import torch.nn.functional as F
+from PIL import Image, ImageDraw, ImageFont
+from skimage.io import imread, imsave
+from torch import nn
 from torch.autograd import Variable
-
+from torch.nn.modules.loss import _Loss, _WeightedLoss
+from torch.utils.data import DataLoader
 
 import util.data_utils as pu
 import util.utils as ut
-from torch.utils.data import DataLoader
-
-import os
-from skimage.io import imread, imsave
-from PIL import Image, ImageFont, ImageDraw
-import matplotlib.patches as mpatches
-import numpy as np
-import ntpath
-import shutil
-import glob
-
+from config import *
+from util.utils import AverageMeter
 
 
 def make_prediction_on_images(input_dir, output_dir, transforms, model, log=None):
@@ -338,5 +333,3 @@ def adjust_lr_on_plateau(optimizer):
             param_group['lr'] = param_group['lr']/10
 
     return optimizer
-
-

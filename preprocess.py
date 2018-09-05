@@ -3,8 +3,10 @@
 
 # # Otoliths predictions
 
-from util.useful_imports import *
+# Segment all images
+from skimage.io import imread, imsave
 
+from util.useful_imports import *
 
 # # Data processing
 
@@ -126,8 +128,6 @@ for dire in os.listdir(SAMPLE_DIR):
 
 
 print("Segmenting the test data")
-# Segment all images
-from skimage.io import imread, imsave
 
 if os.path.exists(TEST_DIR):
     shutil.rmtree(TEST_DIR)

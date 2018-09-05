@@ -1,15 +1,17 @@
 import os
 from os import listdir
 from os.path import isfile, join
+
+import numpy as np
+import pandas as pd
+import torch
 #import cv2
 from PIL import Image
-import pandas as pd
-import numpy as np
-import util.utils as ut
-import torch
-
+from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer
 from torch.utils.data import Dataset
-from sklearn.preprocessing import MultiLabelBinarizer,LabelEncoder
+
+import util.utils as ut
+
 
 class DataLoader(Dataset):
     """Fish dataset"""
@@ -73,5 +75,3 @@ class DataLoaderFromPILL(Dataset):
 
     def __len__(self):
         return len(self.images)
-
-
