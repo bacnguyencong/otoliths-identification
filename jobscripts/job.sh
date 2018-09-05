@@ -11,4 +11,8 @@ cd ..
 # The message variable is not used for now (will be used to update spreadsheet later)
 # Variable order: message im_size architecture epochs
 
+<<<<<<< HEAD
 python main_hier.py --train --test
+=======
+python main.py -img_size 224 -b 32 -j 4 --arch resnet18 -epochs 100 -lr_patience 5 -early_stop 10 -lr 0.001 --pretrain --train --test
+>>>>>>> c91e3a8db03a54c7527cd584ca274403d05138eb
