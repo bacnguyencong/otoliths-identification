@@ -47,6 +47,7 @@ def main(args):
 
     # data loader for training
     dset_train = ImageFolder(root=conf.TRAIN_DIR, transform=input_trans)
+    labels = dset_train.classes  # all lables
 
     # Configure
     # preprocessing
@@ -127,7 +128,6 @@ def main(args):
                               shuffle=False,
                               num_workers=args.workers,
                               pin_memory=conf.GPU_AVAIL)
-
     
     # Training model
     if args.train:
