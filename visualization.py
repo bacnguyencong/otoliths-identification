@@ -10,10 +10,14 @@ import argparse
 import torch.nn as nn
 import config as conf
 from model.CNNs import FineTuneModel_Hierarchical
+import sys
+import shutil
+import glob
+from util.useful_imports import copyfile
 
 
 class FeatureExtractor():
-    """ Class for extracting activations and 
+    """ Class for extracting activations and
     registering gradients from targetted intermediate layers """
 
     def __init__(self, model, target_layers):
@@ -30,6 +34,7 @@ class FeatureExtractor():
         for name, module in self.model._modules.items():
             x = module(x)
             if name in self.target_layers:
+                # print('structure is ', module)
                 x.register_hook(self.save_gradient)
                 outputs += [x]
         return outputs, x
@@ -72,13 +77,12 @@ def preprocess_image(img):
     return input
 
 
-def show_cam_on_image(img, mask):
+def show_cam_on_image(img, mask, filename):
     heatmap = cv2.applyColorMap(np.uint8(255*mask), cv2.COLORMAP_JET)
     heatmap = np.float32(heatmap) / 255
     cam = heatmap + np.float32(img)
     cam = cam / np.max(cam)
-    cv2.imwrite(os.path.join(conf.OUTPUT_WEIGHT_PATH,
-                             "cam.jpg"), np.uint8(255 * cam))
+    cv2.imwrite(filename, np.uint8(255 * cam))
 
 
 class GradCam:
@@ -248,6 +252,23 @@ class MyCNNs(nn.Module):
         return model
 
 
+def make_sample(sample_dir):
+    # create a  directory
+    if os.path.exists(sample_dir):
+        shutil.rmtree(sample_dir)
+    os.mkdir(sample_dir)
+
+    for label in os.listdir(conf.TRAIN_DIR):
+
+        tar_dir = os.path.join(conf.TRAIN_DIR, label)
+        img_list = glob.glob(tar_dir + '/*.jpg')
+
+        if len(img_list) > 0:
+            selected = np.random.randint(len(img_list))
+            copyfile(img_list[selected], os.path.join(
+                sample_dir, label + '.jpg'))
+
+
 if __name__ == '__main__':
     """ python grad_cam.py <path_to_image>
     1. Loads an image with opencv.
@@ -255,37 +276,49 @@ if __name__ == '__main__':
     3. Makes a forward pass to find the category index with the highest score,
     and computes intermediate activations.
     Makes the visualization. """
-
+    sample_dir = './output/sample/'
     args = get_args()
+    make_sample(sample_dir)
 
-    # Can work with any model, but it assumes that the model has a
-    # feature method, and a classifier method,
-    # as in the VGG models in torchvision.
-    grad_cam = GradCam(model=MyCNNs(group=args.g),
-                       target_layer_names=['7'], use_cuda=args.use_cuda)
+    gr_0_lab = ['Kleine zandspiering', 'Smelt']  # labels of group 1
+    gr_1_lab = ['Haring', 'Sprot', 'Fint']  # labels of group 2
 
-    img = cv2.imread(args.image_path, 1)
-    img = np.float32(cv2.resize(img, (224, 224))) / 255
-    input = preprocess_image(img)
+    for label in gr_0_lab + gr_1_lab:
+        args.g = int(label in gr_1_lab) + 1
+        args.image_path = os.path.join(sample_dir, label + '.jpg')
 
-    # If None, returns the map for the highest scoring category.
-    # Otherwise, targets the requested index.
-    target_index = None
+        # Can work with any model, but it assumes that the model has a
+        # feature method, and a classifier method,
+        # as in the VGG models in torchvision.
+        grad_cam = GradCam(model=MyCNNs(group=args.g),
+                           target_layer_names=['6'], use_cuda=args.use_cuda)
 
-    mask = grad_cam(input, target_index)
+        img = cv2.imread(args.image_path, 1)
+        img = cv2.resize(img, (224, 224))
+        cv2.imwrite(args.image_path, img)
+        img = np.float32(img) / 255
+        input = preprocess_image(img)
 
-    show_cam_on_image(img, mask)
+        # If None, returns the map for the highest scoring category.
+        # Otherwise, targets the requested index.
+        target_index = None
 
-    gb_model = GuidedBackpropReLUModel(
-        model=MyCNNs(group=args.g), use_cuda=args.use_cuda)
-    gb = gb_model(input, index=target_index)
-    utils.save_image(torch.from_numpy(gb), os.path.join(
-        conf.OUTPUT_WEIGHT_PATH, 'gb.jpg'))
+        mask = grad_cam(input, target_index)
 
-    cam_mask = np.zeros(gb.shape)
-    for i in range(0, gb.shape[0]):
-        cam_mask[i, :, :] = mask
+        show_cam_on_image(img, mask, os.path.join(
+            sample_dir, label + '_cam.jpg'))
+        """ 
+        gb_model = GuidedBackpropReLUModel(
+            model=MyCNNs(group=args.g), use_cuda=args.use_cuda)
+        gb = gb_model(input, index=target_index)
+        utils.save_image(torch.from_numpy(gb), os.path.join(
+            conf.OUTPUT_WEIGHT_PATH, 'gb.jpg'))
 
-    cam_gb = np.multiply(cam_mask, gb)
-    utils.save_image(torch.from_numpy(cam_gb), os.path.join(
-        conf.OUTPUT_WEIGHT_PATH, 'cam_gb.jpg'))
+        cam_mask = np.zeros(gb.shape)
+        for i in range(0, gb.shape[0]):
+            cam_mask[i, :, :] = mask
+
+        cam_gb = np.multiply(cam_mask, gb)
+        utils.save_image(torch.from_numpy(cam_gb), os.path.join(
+            conf.OUTPUT_WEIGHT_PATH, 'cam_gb.jpg'))
+        """
