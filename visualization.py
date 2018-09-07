@@ -282,44 +282,52 @@ if __name__ == '__main__':
     gr_0_lab = ['Kleine zandspiering', 'Smelt', 'Noordse zandspiering']
     gr_1_lab = ['Haring', 'Sprot', 'Fint']  # labels of group 2
 
+    for layer in range(8):
+        out_dir = os.path.join(sample_dir, str(layer + 1))
+        if os.path.exists(out_dir):
+            shutil.rmtree(out_dir)
+        os.mkdir(out_dir)
+
     for label in gr_0_lab + gr_1_lab:
         args.g = int(label in gr_1_lab) + 1
         args.image_path = os.path.join(sample_dir, label + '.jpg')
+        for layer in range(8):
+            out_dir = os.path.join(sample_dir, str(layer + 1))
 
-        # Can work with any model, but it assumes that the model has a
-        # feature method, and a classifier method,
-        # as in the VGG models in torchvision.
-        grad_cam = GradCam(model=MyCNNs(group=args.g),
-                           target_layer_names=['6'], use_cuda=args.use_cuda)
+            grad_cam = GradCam(
+                model=MyCNNs(group=args.g),
+                target_layer_names=[str(layer)],
+                use_cuda=args.use_cuda
+            )
 
-        img = cv2.imread(args.image_path, 1)
-        if img is None:
-            continue
-        img = cv2.resize(img, (224, 224))
-        cv2.imwrite(args.image_path, img)
-        img = np.float32(img) / 255
-        input = preprocess_image(img)
+            img = cv2.imread(args.image_path, 1)
+            if img is None:
+                continue
+            img = cv2.resize(img, (224, 224))
+            cv2.imwrite(os.path.join(out_dir, label + '.jpg'), img)
+            img = np.float32(img) / 255
+            input = preprocess_image(img)
 
-        # If None, returns the map for the highest scoring category.
-        # Otherwise, targets the requested index.
-        target_index = None
+            # If None, returns the map for the highest scoring category.
+            # Otherwise, targets the requested index.
+            target_index = None
 
-        mask = grad_cam(input, target_index)
+            mask = grad_cam(input, target_index)
 
-        show_cam_on_image(img, mask, os.path.join(
-            sample_dir, label + '_cam.jpg'))
-        """ 
-        gb_model = GuidedBackpropReLUModel(
-            model=MyCNNs(group=args.g), use_cuda=args.use_cuda)
-        gb = gb_model(input, index=target_index)
-        utils.save_image(torch.from_numpy(gb), os.path.join(
-            conf.OUTPUT_WEIGHT_PATH, 'gb.jpg'))
+            show_cam_on_image(img, mask, os.path.join(
+                out_dir, label + '_cam.jpg'))
+            """
+            gb_model = GuidedBackpropReLUModel(
+                model=MyCNNs(group=args.g), use_cuda=args.use_cuda)
+            gb = gb_model(input, index=target_index)
+            utils.save_image(torch.from_numpy(gb), os.path.join(
+                sample_dir, label + '_gb.jpg'))
 
-        cam_mask = np.zeros(gb.shape)
-        for i in range(0, gb.shape[0]):
-            cam_mask[i, :, :] = mask
+            cam_mask = np.zeros(gb.shape)
+            for i in range(0, gb.shape[0]):
+                cam_mask[i, :, :] = mask
 
-        cam_gb = np.multiply(cam_mask, gb)
-        utils.save_image(torch.from_numpy(cam_gb), os.path.join(
-            conf.OUTPUT_WEIGHT_PATH, 'cam_gb.jpg'))
-        """
+            cam_gb = np.multiply(cam_mask, gb)
+            utils.save_image(torch.from_numpy(cam_gb), os.path.join(
+                sample_dir, label + '_cam_gb.jpg'))
+            """
