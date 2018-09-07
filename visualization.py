@@ -203,13 +203,11 @@ class GuidedBackpropReLUModel:
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--use-cuda', action='store_true', default=False,
-                        help='Use NVIDIA GPU acceleration')
     parser.add_argument('--image-path', type=str, default='./examples/both.png',
                         help='Input image path')
     parser.add_argument('-g', type=str, default=1, help='Group')
     args = parser.parse_args()
-    args.use_cuda = args.use_cuda and torch.cuda.is_available()
+    args.use_cuda = torch.cuda.is_available()
     if args.use_cuda:
         print("Using GPU for acceleration")
     else:
@@ -280,7 +278,8 @@ if __name__ == '__main__':
     args = get_args()
     make_sample(sample_dir)
 
-    gr_0_lab = ['Kleine zandspiering', 'Smelt']  # labels of group 1
+    # labels of group 1
+    gr_0_lab = ['Kleine zandspiering', 'Smelt', 'Noordse zandspiering']
     gr_1_lab = ['Haring', 'Sprot', 'Fint']  # labels of group 2
 
     for label in gr_0_lab + gr_1_lab:
@@ -294,6 +293,8 @@ if __name__ == '__main__':
                            target_layer_names=['6'], use_cuda=args.use_cuda)
 
         img = cv2.imread(args.image_path, 1)
+        if img is None:
+            continue
         img = cv2.resize(img, (224, 224))
         cv2.imwrite(args.image_path, img)
         img = np.float32(img) / 255

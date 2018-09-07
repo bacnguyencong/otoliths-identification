@@ -240,7 +240,8 @@ def predict(model, outputs, mask=None):
 
     return prob, pred, prob_sublevel, pred_sublevel
 
-def train(train_loader, valid_loader, model, optimizer, args, log=None):
+
+def train(train_loader, valid_train_loader, valid_loader, model, optimizer, args, log=None):
     """ Train the model
     Args:
         train_loader: the loader for training data set
@@ -290,6 +291,9 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
 
         # training the model
         loss, acc_level_0, acc_level_1 = run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, args.epochs, log)
+
+        loss, acc_level_0, acc_level_1, true_labels, pred_labels = evaluate(
+            model, BCELoss, CETLoss, valid_train_loader)
         all_train_losses.append(loss)
         all_train_acc_level_0.append(acc_level_0)
         all_train_acc_level_1.append(acc_level_1)
@@ -304,7 +308,8 @@ def train(train_loader, valid_loader, model, optimizer, args, log=None):
                 .format(loss, acc_level_0, acc_level_1))
 
         # remember best accuracy and save checkpoint
-        if acc_level_1 > best_acc_level_1:
+        if (acc_level_1 > best_acc_level_1) or \
+                (acc_level_1 == best_acc_level_1 and loss < best_loss):
             # saving the best results
             best_loss, best_acc_level_0, best_acc_level_1 = loss, acc_level_0, acc_level_1
             best_true_labels, best_pred_labels = true_labels, pred_labels
