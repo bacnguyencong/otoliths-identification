@@ -241,7 +241,7 @@ def predict(model, outputs, mask=None):
     return prob, pred, prob_sublevel, pred_sublevel
 
 
-def train(train_loader, valid_train_loader, valid_loader, model, optimizer, args, log=None):
+def train(train_loader, valid_loader, model, optimizer, args, log=None):
     """ Train the model
     Args:
         train_loader: the loader for training data set
@@ -291,9 +291,6 @@ def train(train_loader, valid_train_loader, valid_loader, model, optimizer, args
 
         # training the model
         loss, acc_level_0, acc_level_1 = run_epoch(train_loader, model, BCELoss, CETLoss, optimizer, epoch, args.epochs, log)
-
-        loss, acc_level_0, acc_level_1, true_labels, pred_labels = evaluate(
-            model, BCELoss, CETLoss, valid_train_loader)
         all_train_losses.append(loss)
         all_train_acc_level_0.append(acc_level_0)
         all_train_acc_level_1.append(acc_level_1)

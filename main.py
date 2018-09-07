@@ -45,7 +45,6 @@ def main(args):
 
     # data loader for training
     dset_train = ImageFolder(root=conf.TRAIN_DIR, transform=input_trans)
-    valid_train = ImageFolder(root=conf.TRAIN_DIR, transform=valid_trans)
 
     # Configure
     # preprocessing
@@ -130,19 +129,12 @@ def main(args):
         num_workers=args.workers,
         pin_memory=conf.GPU_AVAIL
     )
-    valid_train_loader = DataLoader(
-        valid_train,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.workers,
-        pin_memory=conf.GPU_AVAIL
-    )
 
     # Training model
     if args.train:
         model, tr_loss, tr_acc_0, tr_acc_1, va_loss, va_acc_0, va_acc_1, \
             true_labels, pred_labels \
-            = muh.train(train_loader, valid_train_loader, valid_loader, model,
+            = muh.train(train_loader, valid_loader, model,
                         optimizer, args, log)
         # generate output
         ut.loss_acc_plot(tr_loss, va_loss, 'Loss', conf.OUTPUT_WEIGHT_PATH)

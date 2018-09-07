@@ -210,10 +210,10 @@ def loss_acc_plot(train, valid, label, output):
     plt.plot(x, train, label='Train')
     plt.plot(x, valid, label='Valid')
 
-    np.savetxt(output + label + '_train.out', np.array([x, train]),
-               delimiter=',')   # X is an array
-    np.savetxt(output + label + '_test.out', np.array([x, valid]),
-               delimiter=',')   # X is an array
+    np.savetxt(output + label + '_train.txt', np.array([x, train]).T,
+               delimiter=',', fmt='%.4f')   # X is an array
+    np.savetxt(output + label + '_test.txt', np.array([x, valid]).T,
+               delimiter=',', fmt='%.4f')   # X is an array
 
     plt.ylabel(label)
     plt.xlabel('epoch')
