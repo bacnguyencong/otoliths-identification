@@ -93,3 +93,5 @@ plt.savefig(
     bbox_inches='tight',
     dpi=500
 )
+
+df.to_csv(os.path.join(conf.OUTPUT_WEIGHT_PATH, 'tsne_map.csv'), index=False)
