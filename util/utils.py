@@ -31,7 +31,7 @@ def sort_regions(regions):
         - regions_sorted
     """
     regions_sorted = []
-    regions.sort(key=lambda reg : reg.centroid[0], reverse=True)  # sort on rows
+    regions.sort(key=lambda reg: reg.centroid[0], reverse=True)  # sort on rows
 
     regions_row = [regions.pop()]
     while regions:
@@ -40,14 +40,15 @@ def sort_regions(regions):
         if reg.centroid[0] > min_row and reg.centroid[0] < max_row:  # part of row
             regions_row.append(reg)
         else:
-            regions_sorted += sorted(regions_row, key=lambda reg : reg.centroid[1])
+            regions_sorted += sorted(regions_row,
+                                     key=lambda reg: reg.centroid[1])
             regions_row = [reg]  # start new row
-    regions_sorted += sorted(regions_row, key=lambda reg : reg.centroid[1])
+    regions_sorted += sorted(regions_row, key=lambda reg: reg.centroid[1])
     return regions_sorted
 
 
 def segment_image(image, remove_bg=True, conv_sigma=2,
-                    opening_size=30):
+                  opening_size=30):
     """
     Segment larger regions from an image. Give it an image and it returns a
     list of region objects, approximately ordered accoring the numbering at the
@@ -74,22 +75,23 @@ def segment_image(image, remove_bg=True, conv_sigma=2,
     # thresholding and binary opening
     image_thresholded = dilated > 0.5 * threshold_otsu(dilated)
     segmentation = binary_opening(image_thresholded,
-                                    np.ones((opening_size, opening_size)))
+                                  np.ones((opening_size, opening_size)))
     if 0:
         distance = ndi.distance_transform_edt(segmentation)
         local_maxi = peak_local_max(distance, indices=False,
-                            footprint=np.ones((3, 3)),
+                                    footprint=np.ones((3, 3)),
                                     labels=segmentation)
         markers = ndi.label(local_maxi)[0]
         label_image = watershed(-distance, markers, mask=segmentation)
-        segmentation = np.logical_or(label_image>0, segmentation)
+        segmentation = np.logical_or(label_image > 0, segmentation)
     if remove_bg:
-        image[segmentation==False] = 0
+        image[segmentation == False] = 0
     label_image = label(segmentation)
     # find regions and sort them
     regions = sort_regions(regionprops(label_image))
 
     return regions
+
 
 def imshow(image, title=None):
     """ show an image """
@@ -99,6 +101,7 @@ def imshow(image, title=None):
     if title is not None:
         plt.title(title)
 
+
 def make_square(img, fill_color=(0, 0, 0)):
     x, y = img.size
     size = max(x, y)
@@ -106,15 +109,18 @@ def make_square(img, fill_color=(0, 0, 0)):
     new_img.paste(img, ((size - x) // 2, (size - y) // 2))
     return new_img
 
+
 def crop_img(img, width, height, x=0, y=100):
     """ Crop a PIL image """
     area = (x, y, width, height)
     img = img.crop(area)
     return img
 
+
 def resize_cv2(image, heigh=1280, width=1918):
     """ Resize of an cv2 image """
     return cv2.resize(image, (width, heigh), cv2.INTER_LINEAR)
+
 
 def image_to_tensor(image):
     """Transform image (input is numpy array, read in by cv2)
@@ -122,22 +128,25 @@ def image_to_tensor(image):
         image: a multiarray image from cv2 format
     """
     image = image.astype(np.float32)
-    image = image.transpose((2,0,1))
+    image = image.transpose((2, 0, 1))
     tensor = torch.from_numpy(image)
 
     return tensor
 
+
 class Logger(object):
     def __init__(self):
-        self.terminal = sys.stdout  #stdout
+        self.terminal = sys.stdout  # stdout
         self.file = None
 
     def open(self, file, mode=None):
-        if mode is None: mode ='w'
+        if mode is None:
+            mode = 'w'
         self.file = open(file, mode)
 
     def write(self, message: object, is_terminal: object = 1, is_file: object = 1) -> object:
-        if '\r' in message: is_file=0
+        if '\r' in message:
+            is_file = 0
 
         if is_terminal == 1:
             self.terminal.write(message)
@@ -153,8 +162,10 @@ class Logger(object):
         # you might want to specify some extra behavior here.
         pass
 
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -170,10 +181,11 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+
 def plot_color_coding(idx_to_lab, output_dir):
     fig = plt.figure(figsize=[4, 4])
     ax = fig.add_axes([0, 0, 1, 1])
-    
+
     cl_coding = ['green', 'cyan', 'blue', 'red', 'pink', 'orange']
 
     for i in range(len(idx_to_lab)):
@@ -183,7 +195,7 @@ def plot_color_coding(idx_to_lab, output_dir):
     ax.set_xlim(0, 2)
     ax.set_ylim(0, len(idx_to_lab))
     ax.axis('off')
-    fig.savefig(output_dir +'color_coding.png', bbox_inches='tight') 
+    fig.savefig(output_dir + 'color_coding.png', bbox_inches='tight')
 
 
 def loss_acc_plot(train, valid, label, output):
@@ -197,12 +209,18 @@ def loss_acc_plot(train, valid, label, output):
     x = list(range(1, len(valid)+1))
     plt.plot(x, train, label='Train')
     plt.plot(x, valid, label='Valid')
+
+    np.savetxt(output + label + '_train.out', np.array([x, train]),
+               delimiter=',')   # X is an array
+    np.savetxt(output + label + '_test.out', np.array([x, valid]),
+               delimiter=',')   # X is an array
+
     plt.ylabel(label)
     plt.xlabel('epoch')
     plt.xticks(x[0::(len(train)+9)//10])
     plt.legend()
-    #plt.show()
     fig.savefig(output + label + '.png', bbox_inches='tight')
+
 
 def plot_confusion_matrix(true_labels, pred_labels,
                           classes,
@@ -226,7 +244,7 @@ def plot_confusion_matrix(true_labels, pred_labels,
 
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
-    #plt.colorbar()
+    # plt.colorbar()
     tick_marks = np.arange(len(classes))
     plt.xticks(tick_marks, classes, rotation=90)
     plt.yticks(tick_marks, classes)
@@ -238,10 +256,11 @@ def plot_confusion_matrix(true_labels, pred_labels,
                  horizontalalignment="center",
                  color="white" if cm[i, j] > thresh else "black")
 
-    #plt.tight_layout()
+    # plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     fig.savefig(output+'confusion_matrix.png', bbox_inches='tight')
+
 
 def adjust_learning_rate(optimizer, epoch, lr):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
