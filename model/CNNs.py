@@ -2,10 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.data as data
-import torchvision
-import torchvision.datasets as dsets
-import torchvision.transforms as transforms
 from torch.autograd import Variable
 
 kernel_size = 2
@@ -32,7 +28,8 @@ class FineTuneModel(nn.Module):
             )
         elif arch.startswith('resnet'):
             # Everything except the last linear layer
-            self.features = nn.Sequential(*list(original_model.children())[:-1])
+            self.features = nn.Sequential(
+                *list(original_model.children())[:-1])
             self.classifier = nn.Sequential(
                 nn.Linear(original_model.fc.in_features, num_classes)
             )
@@ -67,13 +64,14 @@ class FineTuneModel(nn.Module):
             y = self.classifier(f)
         return y
 
+
 class FineTuneModel_Hierarchical(nn.Module):
 
     def __init__(self, original_model, arch, args, gr_0_size=3, gr_1_size=3):
 
         super(FineTuneModel_Hierarchical, self).__init__()
         self.args = args
-        
+
         if arch.startswith('alexnet'):
             self.features = original_model.features
             output_size = 256 * 6 * 6
@@ -82,7 +80,8 @@ class FineTuneModel_Hierarchical(nn.Module):
             self.level_1_1 = nn.Linear(output_size, gr_1_size)
         elif arch.startswith('resnet'):
             # Everything except the last linear layer
-            self.features = nn.Sequential(*list(original_model.children())[:-1])
+            self.features = nn.Sequential(
+                *list(original_model.children())[:-1])
             output_size = original_model.fc.in_features
             self.level_0 = nn.Linear(output_size, 1)
             self.level_1_0 = nn.Linear(output_size, gr_0_size)
@@ -108,11 +107,13 @@ class FineTuneModel_Hierarchical(nn.Module):
     def forward(self, x):
         features = self.features(x)
         if self.modelName.startswith('densenet'):
-            features = F.relu(f, inplace=True)
-            features = F.avg_pool2d(out, kernel_size=7).view(f.size(0), -1)
+            features = F.relu(features, inplace=True)
+            features = F.avg_pool2d(features, kernel_size=7).view(
+                features.size(0), -1)
         else:
             features = features.view(features.size(0), -1)
         return features
+
 
 class CNNs(nn.Module):
     def __init__(self, input_shape=(3, 224, 224), n_outputs=17):

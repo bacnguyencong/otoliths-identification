@@ -195,8 +195,8 @@ if __name__ == '__main__':
                      metavar='LR', help='Initial learning rate')
     prs.add_argument('-b', '--batch_size', default=32, type=int,
                      metavar='N', help='Mini-batch size (default: 16)')
-    prs.add_argument('--weight_decay', '--wd', default=1e-4,
-                     type=float, metavar='W', help='weight decay (default: 1e-4)')
+    prs.add_argument('--weight_decay', '--wd', default=1e-4, type=float,
+                     metavar='W', help='weight decay (default: 1e-4)')
     prs.add_argument('--momentum', default=0.9, type=float,
                      metavar='M', help='momentum')
     prs.add_argument('--pretrained', dest='pretrained', default=True,

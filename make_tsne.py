@@ -1,14 +1,9 @@
 from sklearn.manifold import TSNE
 import os
-import sys
-import glob
-from skimage.io import imread
-from skimage.transform import rescale, resize, downscale_local_mean
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-import argparse
 import torch
 from torch.utils.data import DataLoader
 from torchvision import models, transforms
@@ -35,6 +30,7 @@ checkpoint = torch.load(
 )
 model.load_state_dict(checkpoint['state_dict'])
 model.args = checkpoint['args']
+model.eval()
 
 normalize = transforms.Normalize(
     mean=[0.485, 0.456, 0.406],
@@ -57,7 +53,7 @@ train_loader = DataLoader(
     pin_memory=0
 )
 
-X_train, y_train = [], []
+X_train, y_train = [], []  # type: ignore
 
 for batch_idx, (inputs, y) in enumerate(train_loader):
     input_var = Variable(inputs)
