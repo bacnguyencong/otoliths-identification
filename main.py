@@ -148,6 +148,9 @@ def main(args):
                  for i in model.args['all_idx']]  # class labels
         true_labels = [model.args['idx_to_lab'][i] for i in true_labels]
         pred_labels = [model.args['idx_to_lab'][i] for i in pred_labels]
+        
+        # save prediction
+        ut.save_prediction(true_labels, pred_labels)
         ut.plot_confusion_matrix(
             true_labels, pred_labels, names, conf.OUTPUT_WEIGHT_PATH)
 

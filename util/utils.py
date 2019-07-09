@@ -4,6 +4,8 @@ import sys
 import matplotlib.patches as mpatch
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 import torch
 from PIL import Image
 from scipy import ndimage as ndi
@@ -181,6 +183,11 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
+def save_prediction(true_labels, pred_labels):
+    pd.DataFrame({
+        'True': true_labels,
+        'Pred': pred_labels
+    }).to_csv(output_dir + 'valid_pred.csv', index=False)
 
 def plot_color_coding(idx_to_lab, output_dir):
     fig = plt.figure(figsize=[4, 4])
