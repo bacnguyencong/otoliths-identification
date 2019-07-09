@@ -183,7 +183,7 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-def save_prediction(true_labels, pred_labels):
+def save_prediction(true_labels, pred_labels, output_dir):
     pd.DataFrame({
         'True': true_labels,
         'Pred': pred_labels
