@@ -54,7 +54,7 @@ def main(args):
     lab_to_idx = dset_train.class_to_idx
 
     gr_0_lab = ['Kleine zandspiering', 'Smelt',
-                'Noordse zandspiering']  # labels of group 1
+                'Noorse zandspiering']  # labels of group 1
     gr_1_lab = ['Haring', 'Sprot', 'Fint']  # labels of group 2
     gr_lab = ['zandspieringachtige', 'haringachtige']  # label of groups
 

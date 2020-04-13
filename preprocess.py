@@ -67,6 +67,7 @@ if os.path.exists(VALID_DIR):
 os.makedirs(VALID_DIR)
 
 train_per = 0.9
+rand = np.random.RandomState(123)
 # making a partition of training and valid sets
 for dire in os.listdir(REF_SEG_DIR):
 
@@ -82,7 +83,7 @@ for dire in os.listdir(REF_SEG_DIR):
 
     img_list = glob.glob(os.path.join(REF_SEG_DIR, dire) + '/*.jpg')
     n = len(img_list)
-    rp = np.random.permutation(n)
+    rp = rand.permutation(n)
 
     # number of training images
     train = math.floor(train_per * n)

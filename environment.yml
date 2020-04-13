@@ -21,3 +21,4 @@ dependencies:
  - opencv
  - scikit-image
  - seaborn
+ - pillow=6.1
